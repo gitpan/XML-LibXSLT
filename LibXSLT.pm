@@ -1,15 +1,15 @@
-# $Id: LibXSLT.pm,v 1.27 2001/11/14 12:11:45 matt Exp $
+# $Id: LibXSLT.pm,v 1.33 2001/11/25 17:29:03 matt Exp $
 
 package XML::LibXSLT;
 
 use strict;
 use vars qw($VERSION @ISA);
 
-use XML::LibXML;
+use XML::LibXML 1.31;
 
 require Exporter;
 
-$VERSION = "1.30";
+$VERSION = "1.31";
 
 require DynaLoader;
 
@@ -25,39 +25,91 @@ sub new {
 }
 
 sub xpath_to_string {
-    my %params = @_;
-    foreach my $key (keys %params) {
-        if ($params{$key} =~ /\'/) {
-            $params{$key} = join('', 
+    my @results;
+    while (@_) {
+        my $value = shift(@_); $value = '' unless defined $value;
+        push @results, $value;
+        next if @results % 2;
+        if ($value =~ /\'/) {
+            $results[-1] = join('', 
                 "concat(", 
                         join(', ', 
                                 map { "'$_', \"'\"" } 
-                                split /\'/, $params{$key}), 
+                                split /\'/, $value), 
                                 ")");
         }
         else {
-            $params{$key} = "'$params{$key}'";
+            $results[-1] = "'$results[-1]'";
         }
     }
-    return %params;
+    return @results;
 }
 
 sub callbacks {
     my $self = shift;
     if (@_) {
         my ($match, $open, $read, $close) = @_;
-        $self->match_callback($match);
-        $self->open_callback($open);
-        $self->read_callback($read);
-        $self->close_callback($close);
+
+        $self->{XML_LIBXSLT_MATCH} = $match ;
+        $self->{XML_LIBXSLT_OPEN} = $open ;
+        $self->{XML_LIBXSLT_READ} = $read ;
+        $self->{XML_LIBXSLT_CLOSE} = $close ;
     }
     else {
         return
-            $self->match_callback,
-            $self->open_callback,
-            $self->read_callback,
-            $self->close_callback;
+            $self->{XML_LIBXSLT_MATCH},
+            $self->{XML_LIBXSLT_OPEN},
+            $self->{XML_LIBXSLT_READ},
+            $self->{XML_LIBXSLT_CLOSE};
     }
+}
+
+sub match_callback {
+    my $self = shift;
+    $self->{XML_LIBXSLT_MATCH} = shift if scalar @_;
+    return $self->{XML_LIBXSLT_MATCH};
+}
+
+sub open_callback {
+    my $self = shift;
+    $self->{XML_LIBXSLT_OPEN} = shift if scalar @_;
+    return $self->{XML_LIBXSLT_OPEN};
+}
+
+sub read_callback {
+    my $self = shift;
+    $self->{XML_LIBXSLT_READ} = shift if scalar @_;
+    return $self->{XML_LIBXSLT_READ};
+}
+
+sub close_callback {
+    my $self = shift;
+    $self->{XML_LIBXSLT_CLOSE} = shift if scalar @_;
+    return $self->{XML_LIBXSLT_CLOSE};
+}
+
+sub parse_stylesheet {
+    my $self = shift;
+    if (!ref($self) || !$self->{XML_LIBXSLT_MATCH}) {
+        return $self->_parse_stylesheet(@_);
+    }
+    local $XML::LibXML::match_cb = $self->{XML_LIBXSLT_MATCH};
+    local $XML::LibXML::open_cb = $self->{XML_LIBXSLT_OPEN};
+    local $XML::LibXML::read_cb = $self->{XML_LIBXSLT_READ};
+    local $XML::LibXML::close_cb = $self->{XML_LIBXSLT_CLOSE};
+    $self->_parse_stylesheet(@_);
+}
+
+sub parse_stylesheet_file {
+    my $self = shift;
+    if (!ref($self) || !$self->{XML_LIBXSLT_MATCH}) {
+        return $self->_parse_stylesheet_file(@_);
+    }
+    local $XML::LibXML::match_cb = $self->{XML_LIBXSLT_MATCH};
+    local $XML::LibXML::open_cb = $self->{XML_LIBXSLT_OPEN};
+    local $XML::LibXML::read_cb = $self->{XML_LIBXSLT_READ};
+    local $XML::LibXML::close_cb = $self->{XML_LIBXSLT_CLOSE};
+    $self->_parse_stylesheet_file(@_);
 }
 
 1;

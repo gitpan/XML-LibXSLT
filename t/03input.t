@@ -15,10 +15,13 @@ ok($doc);
 my $xslt = XML::LibXSLT->new();
 ok($xslt);
 
-$xslt->match_callback(\&match_cb);
-$xslt->open_callback(\&open_cb);
-$xslt->close_callback(\&close_cb);
-$xslt->read_callback(\&read_cb);
+# warn("setting callbacks\n");
+local $XML::LibXML::match_cb = \&match_cb;
+local $XML::LibXML::open_cb = \&open_cb;
+local $XML::LibXML::close_cb = \&close_cb;
+local $XML::LibXML::read_cb = \&read_cb;
+
+$xslt->callbacks(\&match_cb, \&open_cb, \&read_cb, \&close_cb);
 
 my $stylesheet = $xslt->parse_stylesheet($parser->parse_string(<<'EOT'));
 <xsl:stylesheet version="1.0"
@@ -40,6 +43,7 @@ EOT
 
 ok($stylesheet);
 
+# warn "transform!\n";
 my $results = $stylesheet->transform($doc);
 
 ok($results);
@@ -51,6 +55,7 @@ ok($output);
 
 sub match_cb {
     my $uri = shift;
+#    warn("match: $uri\n");
     if ($uri eq "foo.xml") {
         ok(1);
         return 1;
@@ -66,10 +71,11 @@ sub open_cb {
 }
 
 sub close_cb {
-#    warn("close\n");
+    # warn("close\n");
     ok(1);
 }
 
 sub read_cb {
+#    warn("read\n");
     return substr($_[0], 0, $_[1], "");
 }
