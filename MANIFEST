@@ -5,10 +5,13 @@ Makefile.PL
 MANIFEST
 README
 typemap
+example/1.xml
+example/1.xsl
 t/01basic.t
 t/02dromeds.t
 t/03input.t
 t/04params.t
+t/05quick.t
 XML-LibXML/Changes
 XML-LibXML/LibXML.pm
 XML-LibXML/LibXML.xs
@@ -24,3 +27,6 @@ XML-LibXML/t/04parsefh.t
 benchmark.pl
 Driver/LibXSLT.pm
 Driver/Sablotron.pm
+Driver/BaseClass.pm
+testcases/default.conf
+

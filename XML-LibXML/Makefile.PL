@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.3 2001/04/12 23:15:14 matt Exp $
+# $Id: Makefile.PL,v 1.5 2001/05/07 19:05:21 matt Exp $
 
 use ExtUtils::MakeMaker;
 use Config;
@@ -41,7 +41,7 @@ OPT
 
 }
 
-my $LINK = "$Config{ld} -o conftest $Config{ccflags} -I$Config{incpath} %s $Config{ldflags} conftest.c $Config{libs} %s %s";
+my $LINK = "$Config{ld} -o conftest $Config{ccflags} -I$Config{incpath} %s $Config{lddlflags} $Config{ldflags} conftest.c $Config{libs} %s %s";
 
 if ($config{LIBS} !~ /\-lxml2\b/) {
     $config{LIBS} .= ' -lxml2';
@@ -61,6 +61,8 @@ libxml2 not found
 Try setting LIBS and INC values on the command line
 Or get libxml2 from 
   http://www.libxml.org/
+If you install via RPMs, make sure you also install the -devel
+RPMs, as this is where the headers (.h files) are.
 DEATH
 }
 

@@ -1,4 +1,4 @@
-/* $Id: LibXML.xs,v 1.8 2001/04/17 16:40:07 matt Exp $ */
+/* $Id: LibXML.xs,v 1.11 2001/05/07 18:56:29 matt Exp $ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,6 +88,10 @@ LibXML_load_external_entity(
     STRLEN results_len;
     const char * results_pv;
     xmlParserInputBufferPtr input_buf;
+    
+    if (ctxt->_private == NULL) {
+        return xmlNewInputFromFile(ctxt, URL);
+    }
     
     self = (SV *)ctxt->_private;
     real_obj = (HV *)SvRV(self);
@@ -461,6 +465,8 @@ BOOT:
     xmlSetExternalEntityLoader((xmlExternalEntityLoader)LibXML_load_external_entity);
     xmlSetGenericErrorFunc(PerlIO_stderr(), (xmlGenericErrorFunc)LibXML_error_handler);
     LibXML_error = newSVpv("", 0);
+    xmlGetWarningsDefaultValue = 0;
+    xmlLoadExtDtdDefaultValue = 1;
 
 void
 END()
@@ -595,12 +601,10 @@ _release(self)
         SV * self
     PREINIT:
         xmlParserCtxtPtr ctxt;
+        SV * hval;
     CODE:
-        ctxt = (xmlParserCtxtPtr)SvIV(
-                (SV*)SvRV(
-                        hv_delete((HV *)SvRV(self), "_context", 8, 0)
-                        )
-                    );
+        hval = hv_delete((HV *)SvRV(self), "_context", 8, 0);
+        ctxt = (xmlParserCtxtPtr)SvIV( (SV*)SvRV(hval) );
 
 char *
 get_last_error(CLASS)
@@ -720,7 +724,7 @@ toString(self)
 	if (result == NULL) {
 	    croak("Failed to convert doc to string");
 	} else {
-            RETVAL = newSVpvn(result, len);
+            RETVAL = newSVpvn((char *)result, (STRLEN)len);
 	    xmlFree(result);
 	}
     OUTPUT:
@@ -776,6 +780,6 @@ new(CLASS, external, system)
         char * external
         char * system
     CODE:
-        RETVAL = xmlParseDTD(external, system);
+        RETVAL = xmlParseDTD((const xmlChar*)external, (const xmlChar*)system);
     OUTPUT:
         RETVAL
