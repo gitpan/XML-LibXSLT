@@ -1,4 +1,4 @@
-/* $Id: LibXSLT.xs,v 1.11 2001/03/15 19:09:18 matt Exp $ */
+/* $Id: LibXSLT.xs,v 1.14 2001/04/12 23:15:14 matt Exp $ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -6,6 +6,10 @@ extern "C" {
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+#include <libxml/xmlversion.h>
+#include <libxml/xmlmemory.h>
+#include <libxml/debugXML.h>
+#include <libxml/HTMLtree.h>
 #include <libxslt/xslt.h>
 #include <libxslt/xsltInternals.h>
 #include <libxslt/transform.h>
@@ -75,7 +79,7 @@ PREFIX_iowrite_fh(void * context, const char * buffer, int len)
     PUSHMARK(SP);
     EXTEND(SP, 2);
     PUSHs(ioref);
-    PUSHs(tbuff);
+    PUSHs(sv_2mortal(tbuff));
     PUTBACK;
     
     cnt = perl_call_method("print", G_SCALAR);
@@ -236,24 +240,24 @@ parse_stylesheet_file(self, filename)
 
 MODULE = XML::LibXSLT         PACKAGE = XML::LibXSLT::Stylesheet
 
-void
-add_param(self, param)
-        xsltStylesheetPtr self
-        const char * param
-    CODE:
-        xsltParseGlobalParam(self, xmlNewText(param));
-
 xmlDocPtr
-transform(self, doc)
+transform(self, doc, ...)
         xsltStylesheetPtr self
         xmlDocPtr doc
     PREINIT:
         char * CLASS = "XML::LibXML::Document";
+        const char *xslt_params[254];
     CODE:
         if (doc == NULL) {
             XSRETURN_UNDEF;
         }
-        RETVAL = xsltApplyStylesheet(self, doc);
+        if (items > 2) {
+            int i;
+            for (i = 2; (i < items && i < 256); i++) {
+                xslt_params[i - 2] = (char *)SvPV(ST(i), PL_na);
+            }
+        }
+        RETVAL = xsltApplyStylesheet(self, doc, xslt_params);
         if (RETVAL == NULL) {
             XSRETURN_UNDEF;
         }
@@ -261,13 +265,20 @@ transform(self, doc)
         RETVAL
 
 xmlDocPtr
-transform_file(self, filename)
+transform_file(self, filename, ...)
         xsltStylesheetPtr self
         char * filename
     PREINIT:
         char * CLASS = "XML::LibXML::Document";
+        const char *xslt_params[254];
     CODE:
-        RETVAL = xsltApplyStylesheet(self, xmlParseFile(filename));
+        if (items > 2) {
+            int i;
+            for (i = 2; (i < items && i < 256); i++) {
+                xslt_params[i - 2] = (char *)SvPV(ST(i), PL_na);
+            }
+        }
+        RETVAL = xsltApplyStylesheet(self, xmlParseFile(filename), xslt_params);
         if (RETVAL == NULL) {
             XSRETURN_UNDEF;
         }

@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.3 2001/03/11 13:16:21 matt Exp $
+# $Id: Makefile.PL,v 1.5 2001/04/12 23:15:14 matt Exp $
 
 use ExtUtils::MakeMaker;
 use Config;
@@ -17,13 +17,18 @@ my $DEBUG = delete $config{DEBUG};
 
 # get libs and inc from gnome-config
 eval {
-    print "running gnome-config... ";
-    $config{LIBS} ||= backtick('gnome-config --libs xslt');
-    $config{INC} ||= backtick('gnome-config --cflags xslt');
+    print "running xslt-config... ";
+    my $ver = backtick('xslt-config --version');
+    die "VERSION" unless $ver >= 0.7;
+    $config{LIBS} ||= backtick('xslt-config --libs');
+    $config{INC} ||= backtick('xslt-config --cflags');
     print "ok\n";
 };
 if ($@) {
     print "failed\n";
+    if ($@ =~ /^VERSION/) { 
+        die "XML::LibXSLT needs libxslt version 0.7.0 or higher\n";
+    }
     warn "*** ", $@ if $DEBUG;
     warn "using fallback values for LIBS and INC\n";
     # backtick fails if gnome-config didn't exist...

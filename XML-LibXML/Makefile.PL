@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.1 2001/03/11 12:39:47 matt Exp $
+# $Id: Makefile.PL,v 1.3 2001/04/12 23:15:14 matt Exp $
 
 use ExtUtils::MakeMaker;
 use Config;
@@ -17,9 +17,9 @@ my $DEBUG = delete $config{DEBUG};
 
 # get libs and inc from gnome-config
 eval {
-    print "running gnome-config... ";
-    $config{LIBS} ||= backtick('gnome-config --libs xml2');
-    $config{INC} ||= backtick('gnome-config --cflags xml2');
+    print "running xml2-config... ";
+    $config{LIBS} ||= backtick('xml2-config --libs');
+    $config{INC} ||= backtick('xml2-config --cflags');
     print "ok\n";
 };
 if ($@) {

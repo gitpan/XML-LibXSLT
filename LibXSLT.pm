@@ -1,4 +1,4 @@
-# $Id: LibXSLT.pm,v 1.8 2001/03/15 19:09:39 matt Exp $
+# $Id: LibXSLT.pm,v 1.10 2001/04/12 23:15:14 matt Exp $
 
 package XML::LibXSLT;
 
@@ -9,7 +9,7 @@ use XML::LibXML;
 
 require Exporter;
 
-$VERSION = "0.96";
+$VERSION = "0.97";
 
 require DynaLoader;
 
@@ -106,20 +106,16 @@ stylesheet object which you call the transform() method passing in a
 document to transform. This allows you to have multiple transformations
 happen with one stylesheet without requiring a reparse.
 
-=head2 transform(doc)
+=head2 transform(doc, %params)
 
-  my $results = $stylesheet->transform($doc);
+  my $results = $stylesheet->transform($doc, foo => "value);
 
 Transforms the passed in XML::LibXML::Document object, and returns a
-new XML::LibXML::Document.
+new XML::LibXML::Document. Extra hash entries are used as parameters.
 
-=head2 transform_file(filename)
+=head2 transform_file(filename, %params)
 
-  my $results = $stylesheet->transform_file($filename);
-
-=head2 add_param(param)
-
-Add a string as a parameter passed to the stylesheet (for xsl:param).
+  my $results = $stylesheet->transform_file($filename, bar => "value");
 
 =head2 output_string(result)
 
