@@ -1,4 +1,4 @@
-/* $Id: LibXSLT.xs,v 1.6 2001/03/12 20:20:22 matt Exp $ */
+/* $Id: LibXSLT.xs,v 1.10 2001/03/14 22:33:18 matt Exp $ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,6 +13,27 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+SV * debug_cb;
+
+#define SET_CB(cb, fld) \
+    RETVAL = cb ? newSVsv(cb) : &PL_sv_undef;\
+    if (cb) {\
+        if (cb != fld) {\
+            sv_setsv(cb, fld);\
+        }\
+    }\
+    else {\
+        cb = newSVsv(fld);\
+    }
+
+void
+free_all_callbacks(void)
+{
+    if (debug_cb) {
+        SvREFCNT_dec(debug_cb);
+    }
+}
 
 int
 iowrite_scalar(void * context, const char * buffer, int len)
@@ -86,14 +107,8 @@ ioclose_fh(void * context)
 void
 error_handler(void * ctxt, const char * msg, ...)
 {
-    dSP;
-    
-    SV * self = (SV *)ctxt;
-    SV * tbuff;
-    SV ** func;
     va_list args;
     char buffer[50000];
-    int cnt;
     
     buffer[0] = 0;
     
@@ -101,37 +116,89 @@ error_handler(void * ctxt, const char * msg, ...)
     vsprintf(&buffer[strlen(buffer)], msg, args);
     va_end(args);
     
-    func = hv_fetch((HV *)SvRV(self), "_error_handler", 14, 0);
+    croak(buffer);
+}
+
+void
+debug_handler(void * ctxt, const char * msg, ...)
+{
+    dSP;
     
-    if (!func || !SvTRUE(*func)) {
-        return;
+    va_list args;
+    char buffer[50000];
+    
+    buffer[0] = 0;
+    
+    va_start(args, msg);
+    vsprintf(&buffer[strlen(buffer)], msg, args);
+    va_end(args);
+
+    if (debug_cb && SvTRUE(debug_cb)) {
+        int cnt = 0;
+        SV * tbuff = newSVpv((char*)buffer, 0);
+    
+        ENTER;
+        SAVETMPS;
+
+        PUSHMARK(SP);
+        EXTEND(SP, 1);
+        PUSHs(tbuff);
+        PUTBACK;
+
+        cnt = perl_call_sv(debug_cb, G_SCALAR);
+
+        SPAGAIN;
+
+        if (cnt != 1) {
+            croak("debug handler call failed");
+        }
+
+        PUTBACK;
+
+        FREETMPS;
+        LEAVE;
+    }
+    else {
+        xmlGenericError(ctxt, buffer);
     }
     
-    tbuff = newSVpv((char*)buffer, 0);
-    
-    ENTER;
-    SAVETMPS;
-    
-    PUSHMARK(SP);
-    EXTEND(SP, 1);
-    PUSHs(tbuff);
-    PUTBACK;
-    
-    cnt = perl_call_sv(*func, G_SCALAR);
-    
-    SPAGAIN;
-    
-    if (cnt != 1) {
-        croak("error handler call failed");
-    }
-    
-    PUTBACK;
-    
-    FREETMPS;
-    LEAVE;
 }
 
 MODULE = XML::LibXSLT         PACKAGE = XML::LibXSLT
+
+BOOT:
+    xsltMaxDepth = 250;
+    xsltSetGenericErrorFunc(PerlIO_stderr(), (xmlGenericErrorFunc)error_handler);
+    xsltSetGenericDebugFunc(PerlIO_stderr(), (xmlGenericErrorFunc)debug_handler);
+
+void
+END()
+    CODE:
+        free_all_callbacks();
+
+int
+max_depth(self, ...)
+        SV * self
+    CODE:
+        RETVAL = xsltMaxDepth;
+        if (items > 1) {
+            xsltMaxDepth = SvIV(ST(1));
+        }
+    OUTPUT:
+        RETVAL
+
+SV *
+debug_callback(self, ...)
+        SV * self
+    CODE:
+        if (items > 1) {
+            SET_CB(debug_cb, ST(1));
+        }
+        else {
+            RETVAL = debug_cb ? sv_2mortal(debug_cb) : &PL_sv_undef;
+        }
+    OUTPUT:
+        RETVAL
 
 xsltStylesheetPtr
 parse_stylesheet(self, doc)
@@ -139,19 +206,11 @@ parse_stylesheet(self, doc)
         xmlDocPtr doc
     PREINIT:
         char * CLASS = "XML::LibXSLT::Stylesheet";
-        SV ** value;
     CODE:
         if (doc == NULL) {
             XSRETURN_UNDEF;
         }
         doc->standalone = 42;
-        value = hv_fetch((HV *)SvRV(self), "error_handler", 13, 0);
-        if (value && SvTRUE(*value)) {
-            xsltSetGenericErrorFunc((void*)self, (xmlGenericErrorFunc)error_handler);
-        }
-        else {
-            xsltSetGenericErrorFunc((void*)self, (xmlGenericErrorFunc)xsltGenericDebug);
-        }
         RETVAL = xsltParseStylesheetDoc(doc);
         if (RETVAL == NULL) {
             XSRETURN_UNDEF;
@@ -159,8 +218,28 @@ parse_stylesheet(self, doc)
     OUTPUT:
         RETVAL
 
+xsltStylesheetPtr
+parse_stylesheet_file(self, filename)
+        SV * self
+        const char * filename
+    PREINIT:
+        char * CLASS = "XML::LibXSLT::Stylesheet";
+    CODE:
+        RETVAL = xsltParseStylesheetFile(filename);
+        if (RETVAL == NULL) {
+            XSRETURN_UNDEF;
+        }
+    OUTPUT:
+        RETVAL
 
 MODULE = XML::LibXSLT         PACKAGE = XML::LibXSLT::Stylesheet
+
+void
+add_param(self, param)
+        xsltStylesheetPtr self
+        const char * param
+    CODE:
+        xsltParseGlobalParam(self, xmlNewText(param));
 
 xmlDocPtr
 transform(self, doc)
@@ -173,6 +252,20 @@ transform(self, doc)
             XSRETURN_UNDEF;
         }
         RETVAL = xsltApplyStylesheet(self, doc);
+        if (RETVAL == NULL) {
+            XSRETURN_UNDEF;
+        }
+    OUTPUT:
+        RETVAL
+
+xmlDocPtr
+transform_file(self, filename)
+        xsltStylesheetPtr self
+        char * filename
+    PREINIT:
+        char * CLASS = "XML::LibXML::Document";
+    CODE:
+        RETVAL = xsltApplyStylesheet(self, xmlParseFile(filename));
         if (RETVAL == NULL) {
             XSRETURN_UNDEF;
         }
