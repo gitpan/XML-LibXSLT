@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.13 2001/06/10 09:51:32 matt Exp $
+# $Id: Makefile.PL,v 1.14 2001/07/17 09:02:52 matt Exp $
 
 use ExtUtils::MakeMaker;
 use Config;
@@ -21,7 +21,7 @@ eval {
     print "running xslt-config... ";
     my $ver = backtick('xslt-config --version');
     my ($major, $minor) = $ver =~ /(\d+)\.(\d+)/g;
-    die "VERSION" unless $minor >= 7;
+    die "VERSION" unless $major > 0 || $minor >= 7;
     $config{LIBS} ||= backtick('xslt-config --libs');
     $config{INC} ||= backtick('xslt-config --cflags');
     print "ok\n";
