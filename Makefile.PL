@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.12 2001/06/09 13:31:54 matt Exp $
+# $Id: Makefile.PL,v 1.13 2001/06/10 09:51:32 matt Exp $
 
 use ExtUtils::MakeMaker;
 use Config;
@@ -68,7 +68,7 @@ WriteMakefile(
     'VERSION_FROM' => 'LibXSLT.pm', # finds $VERSION
     'AUTHOR'    => 'Matt Sergeant',
     'ABSTRACT'  => 'Interface to Gnome libxslt library',
-    'PREREQ_PM' => { 'XML::LibXML' => "0.91", },
+    'PREREQ_PM' => { 'XML::LibXML' => "0.94", },
     %config,
 );
 
