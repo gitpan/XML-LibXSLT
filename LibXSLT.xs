@@ -1,4 +1,4 @@
-/* $Id: LibXSLT.xs,v 1.19 2001/05/29 09:45:48 matt Exp $ */
+/* $Id: LibXSLT.xs,v 1.21 2001/06/03 15:28:28 matt Exp $ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -388,13 +388,30 @@ media_type(self)
     CODE:
         RETVAL = (char *)self->mediaType;
         if (RETVAL == NULL) {
-            /* this below is rather simplistic, but should work for most cases */
-            RETVAL = "text/html";
-            if (strcmp(self->method, "xml") == 0) {
-                RETVAL = "text/xml";
+            /* OK, that was borked. Try finding xsl:output tag manually... */
+            xmlNodePtr child;
+            child = self->doc->children->children;
+            while ( child != NULL && 
+                    strcmp(child->name, "output") != 0 &&
+                    strcmp(child->ns->href, 
+                    "http://www.w3.org/1999/XSL/Transform") != 0) {
+                child = child->next;
             }
-            else if (strcmp(self->method, "text") == 0) {
-                RETVAL = "text/plain";
+            
+            if (child != NULL) {
+                 RETVAL = xmlGetProp(child, "media-type");
+            }
+            else {
+                RETVAL = "text/html";
+                /* this below is rather simplistic, but should work for most cases */
+                if (self->method != NULL) {
+                    if (strcmp(self->method, "xml") == 0) {
+                        RETVAL = "text/xml";
+                    }
+                    else if (strcmp(self->method, "text") == 0) {
+                        RETVAL = "text/plain";
+                    }
+                }
             }
         }
     OUTPUT:
