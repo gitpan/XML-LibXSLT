@@ -1,4 +1,4 @@
-# $Id: LibXSLT.pm,v 1.34 2002/05/12 10:10:16 matt Exp $
+# $Id: LibXSLT.pm,v 1.36 2002/08/13 22:27:11 matt Exp $
 
 package XML::LibXSLT;
 
@@ -9,7 +9,7 @@ use XML::LibXML 1.49;
 
 require Exporter;
 
-$VERSION = "1.50";
+$VERSION = "1.51";
 
 require DynaLoader;
 
@@ -30,13 +30,8 @@ sub xpath_to_string {
         my $value = shift(@_); $value = '' unless defined $value;
         push @results, $value;
         next if @results % 2;
-        if ($value =~ /\'/) {
-            $results[-1] = join('', 
-                "concat(", 
-                        join(', ', 
-                                map { "'$_', \"'\"" } 
-                                split /\'/, $value), 
-                                ")");
+        if ($value =~ s/'/', "'", '/g) {
+	    $results[-1] = "concat('$value')";
         }
         else {
             $results[-1] = "'$results[-1]'";
@@ -110,6 +105,12 @@ sub parse_stylesheet_file {
     local $XML::LibXML::read_cb = $self->{XML_LIBXSLT_READ};
     local $XML::LibXML::close_cb = $self->{XML_LIBXSLT_CLOSE};
     $self->_parse_stylesheet_file(@_);
+}
+
+sub register_xslt_module {
+    my $self = shift;
+    my $module = shift;
+    # Not implemented
 }
 
 1;

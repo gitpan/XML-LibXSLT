@@ -1,4 +1,4 @@
-/* $Id: LibXSLT.xs,v 1.36 2002/05/23 12:52:28 matt Exp $ */
+/* $Id: LibXSLT.xs,v 1.40 2002/08/14 09:20:10 matt Exp $ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -9,6 +9,7 @@ extern "C" {
 #include <libxslt/transform.h>
 #include <libxslt/xsltutils.h>
 #include <libxslt/imports.h>
+#include <libxslt/extensions.h>
 #ifdef HAVE_EXSLT
 #include <libexslt/exslt.h>
 #include <libexslt/exsltconfig.h>
@@ -240,12 +241,13 @@ _parse_stylesheet(self, sv_doc)
         if (sv_doc == NULL) {
             XSRETURN_UNDEF;
         }
-        doc = (xmlDocPtr)PmmSvNode( sv_doc );
+        doc = (xmlDocPtr)x_PmmSvNode( sv_doc );
         if (doc == NULL) {
             XSRETURN_UNDEF;
         }
         doc_copy = xmlCopyDoc(doc, 1);
         doc_copy->URL = xmlStrdup(doc->URL);
+        /* xmlNodeSetBase((xmlNodePtr)doc_copy, doc_copy->URL); */
 
         if (LibXSLT_debug_cb && SvTRUE(LibXSLT_debug_cb)) {
             xsltSetGenericDebugFunc(PerlIO_stderr(), (xmlGenericErrorFunc)LibXSLT_debug_handler);
@@ -298,7 +300,7 @@ transform(self, sv_doc, ...)
         if (sv_doc == NULL) {
             XSRETURN_UNDEF;
         }
-        doc = (xmlDocPtr)PmmSvNode( sv_doc );
+        doc = (xmlDocPtr)x_PmmSvNode( sv_doc );
         if (doc == NULL) {
             XSRETURN_UNDEF;
         }
@@ -335,7 +337,7 @@ transform(self, sv_doc, ...)
             self->method = xmlMalloc(5);
             strcpy(self->method, "html");
         }
-        RETVAL = PmmNodeToSv((xmlNodePtr)real_dom, NULL);
+        RETVAL = x_PmmNodeToSv((xmlNodePtr)real_dom, NULL);
     OUTPUT:
         RETVAL
 
@@ -381,7 +383,7 @@ transform_file(self, filename, ...)
             self->method = xmlMalloc(5);
             strcpy(self->method, "html");
         }
-        RETVAL = PmmNodeToSv((xmlNodePtr)real_dom, NULL);
+        RETVAL = x_PmmNodeToSv((xmlNodePtr)real_dom, NULL);
     OUTPUT:
         RETVAL
 
@@ -403,7 +405,7 @@ output_string(self, sv_doc)
         SV * results = newSVpv("", 0);
         const xmlChar *encoding = NULL;
 	    xmlCharEncodingHandlerPtr encoder = NULL;
-        xmlDocPtr doc = (xmlDocPtr)PmmSvNode( sv_doc );
+        xmlDocPtr doc = (xmlDocPtr)x_PmmSvNode( sv_doc );
     CODE:
         XSLT_GET_IMPORT_PTR(encoding, self, encoding)
         if (encoding != NULL) {
@@ -443,7 +445,7 @@ output_fh(self, sv_doc, fh)
         xmlOutputBufferPtr output;
         const xmlChar *encoding = NULL;
         xmlCharEncodingHandlerPtr encoder = NULL;
-        xmlDocPtr doc = (xmlDocPtr)PmmSvNode( sv_doc );
+        xmlDocPtr doc = (xmlDocPtr)x_PmmSvNode( sv_doc );
     CODE:
         XSLT_GET_IMPORT_PTR(encoding, self, encoding)
         if (encoding != NULL) {
@@ -477,7 +479,7 @@ output_file(self, sv_doc, filename)
         SV * sv_doc
         char * filename
     PREINIT:
-        xmlDocPtr doc = (xmlDocPtr)PmmSvNode( sv_doc );
+        xmlDocPtr doc = (xmlDocPtr)x_PmmSvNode( sv_doc );
     CODE:
         if (LibXSLT_debug_cb && SvTRUE(LibXSLT_debug_cb)) {
             xsltSetGenericDebugFunc(PerlIO_stderr(), (xmlGenericErrorFunc)LibXSLT_debug_handler);
