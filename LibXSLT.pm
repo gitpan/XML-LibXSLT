@@ -1,4 +1,4 @@
-# $Id: LibXSLT.pm,v 1.15 2001/05/18 10:24:22 matt Exp $
+# $Id: LibXSLT.pm,v 1.16 2001/05/20 21:41:09 matt Exp $
 
 package XML::LibXSLT;
 
@@ -9,7 +9,7 @@ use XML::LibXML;
 
 require Exporter;
 
-$VERSION = "1.01";
+$VERSION = "1.02";
 
 require DynaLoader;
 
