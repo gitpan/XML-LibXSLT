@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.20 2002/05/12 10:10:16 matt Exp $
+# $Id: Makefile.PL,v 1.22 2004/03/01 18:43:13 matt Exp $
 
 use ExtUtils::MakeMaker;
 
@@ -14,8 +14,8 @@ while($_ = shift) {
 my $DEBUG = delete $config{DEBUG};
 
 require XML::LibXML;
-if ($XML::LibXML::VERSION < 1.49) {
-    die "XML::LibXML 1.49 or higher required\n";
+if ($XML::LibXML::VERSION < 1.57) {
+    die "XML::LibXML 1.57 or higher required\n";
 }
 
 # get libs and inc from gnome-config
@@ -75,7 +75,7 @@ WriteMakefile(
     'VERSION_FROM' => 'LibXSLT.pm', # finds $VERSION
     'AUTHOR'    => 'Matt Sergeant',
     'ABSTRACT'  => 'Interface to Gnome libxslt library',
-    'PREREQ_PM' => { 'XML::LibXML' => "0.94", },
+    'PREREQ_PM' => { 'XML::LibXML' => "1.57", },
     'OBJECT'     => '$(O_FILES)',
     %config,
 );
@@ -245,7 +245,8 @@ use Conftest; \$loaded++;
 EOT
     close($cfile);
     xsystem("$^X Makefile.PL " . join(' ', map { "'$_=$config{$_}'" } keys %config));
-    xsystem("$Config{make} test 'OTHERLDFLAGS=$opt'");
+    my $file = $config{MAKEAPERL} ? "-f Makefile.aperl FIRST_MAKEFILE=Makefile.aperl" : "";
+    xsystem("$Config{make} $file test 'OTHERLDFLAGS=$opt'");
 }
 
 sub try_link {

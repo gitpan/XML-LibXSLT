@@ -1,6 +1,6 @@
 /**
  * perl-libxml-mm.c
- * $Id: perl-libxml-mm.c,v 1.3 2002/08/03 20:09:35 matt Exp $
+ * $Id: perl-libxml-mm.c,v 1.4 2004/02/29 17:50:52 matt Exp $
  *
  * Basic concept:
  * perl varies in the implementation of UTF8 handling. this header (together
@@ -102,6 +102,7 @@ struct _ProxyNode {
     xmlNodePtr node;
     xmlNodePtr owner;
     int count;
+    int encoding;
 };
 
 /* helper type for the proxy structure */
@@ -135,6 +136,7 @@ x_PmmNewNode(xmlNodePtr node)
             proxy->node  = node;
             proxy->owner   = NULL;
             proxy->count   = 0;
+            proxy->encoding = 0;
             node->_private = (void*) proxy;
         }
     }

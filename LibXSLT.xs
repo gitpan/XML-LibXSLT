@@ -1,4 +1,4 @@
-/* $Id: LibXSLT.xs,v 1.54 2003/02/13 17:08:56 matt Exp $ */
+/* $Id: LibXSLT.xs,v 1.58 2004/03/01 18:42:43 matt Exp $ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,6 +18,7 @@ extern "C" {
 #include <libxml/HTMLtree.h>
 #include <libxml/xmlIO.h>
 #include <libxml/tree.h>
+#include <libxml/parser.h>
 #include <libxml/parserInternals.h>
 #include <libxml/xpathInternals.h>
 #include "EXTERN.h"
@@ -51,6 +52,238 @@ extern "C" {
 
 static SV * LibXSLT_debug_cb = NULL;
 static HV * LibXSLT_HV_allCallbacks = NULL;
+
+static SV * LibXSLT_match_cb = NULL;
+static SV * LibXSLT_read_cb  = NULL;
+static SV * LibXSLT_open_cb  = NULL;
+static SV * LibXSLT_close_cb = NULL;
+
+int
+LibXSLT_input_match(char const * filename)
+{
+    int results = 0;
+    SV * global_cb;
+    SV * callback = NULL;
+
+    if (LibXSLT_match_cb && SvTRUE(LibXSLT_match_cb)) {
+        callback = LibXSLT_match_cb;
+    }
+    else if ((global_cb = perl_get_sv("XML::LibXML::match_cb", FALSE))
+             && SvTRUE(global_cb)) {
+        callback = global_cb;
+    }
+
+    if (callback) {
+        int count;
+        SV * res;
+
+        dTHX;
+        dSP;
+
+        ENTER;
+        SAVETMPS;
+
+        PUSHMARK(SP);
+        EXTEND(SP, 1);
+        PUSHs(sv_2mortal(newSVpv((char*)filename, 0)));
+        PUTBACK;
+
+        count = perl_call_sv(callback, G_SCALAR | G_EVAL);
+
+        SPAGAIN;
+
+        if (count != 1) {
+            croak("match callback must return a single value");
+        }
+
+        if (SvTRUE(ERRSV)) {
+            croak("input match callback died: %s", SvPV_nolen(ERRSV));
+            POPs ;
+        }
+
+        res = POPs;
+
+        if (SvTRUE(res)) {
+            results = 1;
+        }
+
+        PUTBACK;
+        FREETMPS;
+        LEAVE;
+    }
+
+    /* warn("matchcb, filename for: %s\n", filename); */
+    return results;
+}
+
+void *
+LibXSLT_input_open(char const * filename)
+{
+    SV * results;
+    SV * global_cb;
+    SV * callback = NULL;
+
+    if (LibXSLT_open_cb && SvTRUE(LibXSLT_open_cb)) {
+        callback = LibXSLT_open_cb;
+    }
+    else if ((global_cb = perl_get_sv("XML::LibXML::open_cb", FALSE))
+            && SvTRUE(global_cb)) {
+        callback = global_cb;
+    }
+
+    if (callback) {
+        int count;
+
+        dTHX;
+        dSP;
+
+        ENTER;
+        SAVETMPS;
+
+        PUSHMARK(SP);
+        EXTEND(SP, 1);
+        PUSHs(sv_2mortal(newSVpv((char*)filename, 0)));
+        PUTBACK;
+
+        count = perl_call_sv(callback, G_SCALAR | G_EVAL);
+
+        SPAGAIN;
+
+        if (count != 1) {
+            croak("open callback must return a single value");
+        }
+
+        if (SvTRUE(ERRSV)) {
+            croak("input callback died: %s", SvPV_nolen(ERRSV));
+            POPs ;
+        }
+
+        results = POPs;
+
+        SvREFCNT_inc(results);
+
+        PUTBACK;
+        FREETMPS;
+        LEAVE;
+    }
+
+    /* warn("opencb, filename for: %s\n", filename); */
+    return (void *)results;
+}
+
+int
+LibXSLT_input_read(void * context, char * buffer, int len)
+{
+    STRLEN res_len = 0;
+    const char * output;
+    SV * global_cb;
+    SV * callback = NULL;
+    SV * ctxt = (SV *)context;
+
+    if (LibXSLT_read_cb && SvTRUE(LibXSLT_read_cb)) {
+        callback = LibXSLT_read_cb;
+    }
+    else if ((global_cb = perl_get_sv("XML::LibXML::read_cb", FALSE))
+            && SvTRUE(global_cb)) {
+        callback = global_cb;
+    }
+
+    if (callback) {
+        int count;
+
+        dTHX;
+        dSP;
+
+        ENTER;
+        SAVETMPS;
+
+        PUSHMARK(SP);
+        EXTEND(SP, 2);
+        PUSHs(ctxt);
+        PUSHs(sv_2mortal(newSViv(len)));
+        PUTBACK;
+
+        count = perl_call_sv(callback, G_SCALAR | G_EVAL);
+
+        SPAGAIN;
+
+        if (count != 1) {
+            croak("read callback must return a single value");
+        }
+
+        if (SvTRUE(ERRSV)) {
+            croak("read callback died: %s", SvPV_nolen(ERRSV));
+            POPs ;
+        }
+
+        output = POPp;
+        if (output != NULL) {
+            res_len = strlen(output);
+            if (res_len) {
+                strncpy(buffer, output, res_len);
+            }
+            else {
+                buffer[0] = 0;
+            }
+        }
+
+        FREETMPS;
+        LEAVE;
+    }
+
+    /* warn("readcb, asked for: %d, returning: [%d] %s\n", len, res_len, buffer); */
+    return res_len;
+}
+
+void
+LibXSLT_input_close(void * context)
+{
+    SV * global_cb;
+    SV * callback = NULL;
+    SV * ctxt = (SV *)context;
+
+    if (LibXSLT_close_cb && SvTRUE(LibXSLT_close_cb)) {
+        callback = LibXSLT_close_cb;
+    }
+    else if ((global_cb = perl_get_sv("XML::LibXML::close_cb", FALSE))
+            && SvTRUE(global_cb)) {
+        callback = global_cb;
+    }
+
+    if (callback) {
+        int count;
+
+        dTHX;
+        dSP;
+
+        ENTER;
+        SAVETMPS;
+
+        PUSHMARK(SP);
+        EXTEND(SP, 1);
+        PUSHs(ctxt);
+        PUTBACK;
+
+        count = perl_call_sv(callback, G_SCALAR | G_EVAL);
+
+        SPAGAIN;
+
+        SvREFCNT_dec(ctxt);
+
+        if (!count) {
+            croak("close callback failed");
+        }
+
+        if (SvTRUE(ERRSV)) {
+            croak("close callback died: %s", SvPV_nolen(ERRSV));
+            POPs ;
+        }
+
+        PUTBACK;
+        FREETMPS;
+        LEAVE;
+    }
+}
 
 void
 LibXSLT_free_all_callbacks(void)
@@ -245,9 +478,11 @@ LibXSLT_generic_function (xmlXPathParserContextPtr ctxt, int nargs) {
                     len = nodelist->nodeNr;
                     for( i ; i < len; i++){
                         tnode = nodelist->nodeTab[i];
+                        /*
                         if( tnode != NULL	&& tnode->doc != NULL) {
                             owner = SvPROXYNODE(sv_2mortal(x_PmmNodeToSv((xmlNodePtr)(tnode->doc), NULL)));
                         }
+                        */
                         if (tnode->type == XML_NAMESPACE_DECL) {
                             element = sv_newmortal();
                             cls = x_PmmNodeTypeName( tnode );
@@ -313,36 +548,46 @@ LibXSLT_generic_function (xmlXPathParserContextPtr ctxt, int nargs) {
         (SvTYPE(SvRV(perl_result)) == SVt_PVMG ||
          SvTYPE(SvRV(perl_result)) == SVt_PVAV))
     {
-        if (sv_isa(perl_result, "XML::LibXML::NodeList")){
-            ret =  (xmlXPathObjectPtr)xmlXPathNewNodeSet(NULL);  
+        if (sv_derived_from(perl_result, "XML::LibXML::NodeList")) {
+            ret = xmlXPathNewNodeSet(NULL);
+            ret->boolval = 1; /* free children */
             array_result = (AV*)SvRV(perl_result);
             while (av_len(array_result) >= 0) {
-                    tmp_node1 = (xmlNodePtr)x_PmmSvNode(sv_2mortal(av_shift(array_result)));
-                    tmp_node = xmlDocCopyNode(tmp_node1, ctxt->context->doc, 1);
-                    xmlXPathNodeSetAdd(ret->nodesetval,tmp_node);
-                    xmlFreeNode(tmp_node);
+                tmp_node1 = (xmlNodePtr)x_PmmSvNode(sv_2mortal(av_shift(array_result)));
+                tmp_node = xmlDocCopyNode(tmp_node1, ctxt->context->doc, 1);
+                xmlXPathNodeSetAdd(ret->nodesetval, tmp_node);
+                if (ret->user == NULL) {
+                    ret->user = (void*)tmp_node;
+                }
+                else {
+                    xmlNodePtr old = (xmlNodePtr)(ret->user);
+                    old->prev = tmp_node;
+                    tmp_node->next = old;
+                    ret->user = (void*)tmp_node;
+                }
             }
             goto FINISH;
         } 
-        else if (sv_isa(perl_result, "XML::LibXML::Node")) {
-            ret =  (xmlXPathObjectPtr)xmlXPathNewNodeSet(NULL);  
+        else if (sv_derived_from(perl_result, "XML::LibXML::Node")) {
+            ret =  (xmlXPathObjectPtr)xmlXPathNewNodeSet(NULL);
+            ret->boolval = 1; /* free children */
             tmp_node1 = (xmlNodePtr)x_PmmSvNode(perl_result);
             tmp_node = xmlDocCopyNode(tmp_node1, ctxt->context->doc, 1);
             xmlXPathNodeSetAdd(ret->nodesetval,tmp_node);
-            xmlFreeNode(tmp_node);
+            ret->user = (void*)tmp_node;
             goto FINISH;
         }
-        else if (sv_isa(perl_result, "XML::LibXML::Boolean")) {
+        else if (sv_derived_from(perl_result, "XML::LibXML::Boolean")) {
             tmp_int = SvIV(SvRV(perl_result));
             ret = (xmlXPathObjectPtr)xmlXPathNewBoolean(tmp_int);
             goto FINISH;
         }
-        else if (sv_isa(perl_result, "XML::LibXML::Literal")) {
+        else if (sv_derived_from(perl_result, "XML::LibXML::Literal")) {
             tmp_string = SvPV(SvRV(perl_result), len);
             ret = (xmlXPathObjectPtr)xmlXPathNewCString(tmp_string);
             goto FINISH;
         }
-        else if (sv_isa(perl_result, "XML::LibXML::Number")) {
+        else if (sv_derived_from(perl_result, "XML::LibXML::Number")) {
             tmp_double = SvNV(SvRV(perl_result));
             ret = (xmlXPathObjectPtr)xmlXPathNewFloat(tmp_double);
             goto FINISH;
@@ -365,11 +610,23 @@ PROTOTYPES: DISABLE
 BOOT:
     LIBXML_TEST_VERSION
     xsltMaxDepth = 250;
+    xsltSetXIncludeDefault(1);
     LibXSLT_HV_allCallbacks = newHV();
 #ifdef HAVE_EXSLT
     exsltRegisterAll();
 #endif
 
+
+int
+xinclude_default(self, ...)
+        SV * self
+    CODE:
+        RETVAL = xsltGetXIncludeDefault();
+        if (items > 1) {
+           xsltSetXIncludeDefault(SvIV(ST(1)));
+        }
+    OUTPUT:
+        RETVAL
 
 int
 max_depth(self, ...)
@@ -444,6 +701,12 @@ _parse_stylesheet(self, sv_doc)
         if (doc == NULL) {
             XSRETURN_UNDEF;
         }
+
+        xmlRegisterInputCallbacks((xmlInputMatchCallback) LibXSLT_input_match,
+                              (xmlInputOpenCallback) LibXSLT_input_open,
+                              (xmlInputReadCallback) LibXSLT_input_read,
+                              (xmlInputCloseCallback) LibXSLT_input_close);
+
         doc_copy = xmlCopyDoc(doc, 1);
         doc_copy->URL = xmlStrdup(doc->URL);
         /* xmlNodeSetBase((xmlNodePtr)doc_copy, doc_copy->URL); */
@@ -455,6 +718,10 @@ _parse_stylesheet(self, sv_doc)
             xsltSetGenericDebugFunc(NULL, NULL);
         }
         RETVAL = xsltParseStylesheetDoc(doc_copy);
+
+        xmlCleanupInputCallbacks();
+        xmlRegisterDefaultInputCallbacks();
+
         if (RETVAL == NULL) {
             XSRETURN_UNDEF;
         }
@@ -468,6 +735,11 @@ _parse_stylesheet_file(self, filename)
     PREINIT:
         char * CLASS = "XML::LibXSLT::Stylesheet";
     CODE:
+        xmlRegisterInputCallbacks((xmlInputMatchCallback) LibXSLT_input_match,
+                              (xmlInputOpenCallback) LibXSLT_input_open,
+                              (xmlInputReadCallback) LibXSLT_input_read,
+                              (xmlInputCloseCallback) LibXSLT_input_close);
+
         if (LibXSLT_debug_cb && SvTRUE(LibXSLT_debug_cb)) {
             xsltSetGenericDebugFunc(PerlIO_stderr(), (xmlGenericErrorFunc)LibXSLT_debug_handler);
         }
@@ -475,6 +747,10 @@ _parse_stylesheet_file(self, filename)
             xsltSetGenericDebugFunc(NULL, NULL);
         }
         RETVAL = xsltParseStylesheetFile(filename);
+
+        xmlCleanupInputCallbacks();
+        xmlRegisterDefaultInputCallbacks();
+
         if (RETVAL == NULL) {
             XSRETURN_UNDEF;
         }
@@ -526,7 +802,15 @@ transform(self, sv_doc, ...)
         else {
             xsltSetGenericDebugFunc(NULL, NULL);
         }
+        xmlRegisterInputCallbacks((xmlInputMatchCallback) LibXSLT_input_match,
+                              (xmlInputOpenCallback) LibXSLT_input_open,
+                              (xmlInputReadCallback) LibXSLT_input_read,
+                              (xmlInputCloseCallback) LibXSLT_input_close);
         real_dom = xsltApplyStylesheet(self, doc, xslt_params);
+
+        xmlCleanupInputCallbacks();
+        xmlRegisterDefaultInputCallbacks();
+
         if (real_dom == NULL) {
             if (SvTRUE(ERRSV)) {
                 croak("Exception occurred while applying stylesheet: %s", SvPV(ERRSV, len));
