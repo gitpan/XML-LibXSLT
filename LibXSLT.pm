@@ -1,4 +1,4 @@
-# $Id: LibXSLT.pm,v 1.11 2001/04/14 14:45:48 matt Exp $
+# $Id: LibXSLT.pm,v 1.12 2001/04/15 22:08:01 matt Exp $
 
 package XML::LibXSLT;
 
@@ -9,7 +9,7 @@ use XML::LibXML;
 
 require Exporter;
 
-$VERSION = "0.98";
+$VERSION = "0.99";
 
 require DynaLoader;
 
@@ -93,7 +93,7 @@ XML::LibXSLT::Stylesheet object, or undef on failure. If the XSLT is
 invalid, an exception will be thrown, so wrap the call to 
 parse_stylesheet in an eval{} block to trap this.
 
-=head2 parse_file($filename)
+=head2 parse_stylesheet_file($filename)
 
 Exactly the same as the above, but parses the given filename directly.
 
