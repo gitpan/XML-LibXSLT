@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.18 2001/11/14 12:11:45 matt Exp $
+# $Id: Makefile.PL,v 1.20 2002/05/12 10:10:16 matt Exp $
 
 use ExtUtils::MakeMaker;
 
@@ -14,8 +14,8 @@ while($_ = shift) {
 my $DEBUG = delete $config{DEBUG};
 
 require XML::LibXML;
-if ($XML::LibXML::VERSION < 1.30) {
-    die "XML::LibXML 1.30 or higher required\n";
+if ($XML::LibXML::VERSION < 1.49) {
+    die "XML::LibXML 1.49 or higher required\n";
 }
 
 # get libs and inc from gnome-config
@@ -76,6 +76,7 @@ WriteMakefile(
     'AUTHOR'    => 'Matt Sergeant',
     'ABSTRACT'  => 'Interface to Gnome libxslt library',
     'PREREQ_PM' => { 'XML::LibXML' => "0.94", },
+    'OBJECT'     => '$(O_FILES)',
     %config,
 );
 

@@ -1,15 +1,15 @@
-# $Id: LibXSLT.pm,v 1.33 2001/11/25 17:29:03 matt Exp $
+# $Id: LibXSLT.pm,v 1.34 2002/05/12 10:10:16 matt Exp $
 
 package XML::LibXSLT;
 
 use strict;
 use vars qw($VERSION @ISA);
 
-use XML::LibXML 1.31;
+use XML::LibXML 1.49;
 
 require Exporter;
 
-$VERSION = "1.31";
+$VERSION = "1.49";
 
 require DynaLoader;
 
