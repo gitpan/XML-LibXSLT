@@ -1,21 +1,27 @@
-# $Id: LibXSLT.pm,v 1.38 2002/09/04 06:58:53 matt Exp $
+# $Id: LibXSLT.pm,v 1.46 2003/02/12 16:48:02 matt Exp $
 
 package XML::LibXSLT;
 
 use strict;
-use vars qw($VERSION @ISA);
+use vars qw($VERSION @ISA $USE_LIBXML_DATA_TYPES);
 
 use XML::LibXML 1.49;
+use XML::LibXML::Literal;
+use XML::LibXML::Boolean;
+use XML::LibXML::Number;
+use XML::LibXML::NodeList;
 
 require Exporter;
 
-$VERSION = "1.52";
+$VERSION = "1.53";
 
 require DynaLoader;
 
 @ISA = qw(DynaLoader);
 
 bootstrap XML::LibXSLT $VERSION;
+
+$USE_LIBXML_DATA_TYPES = 0;
 
 sub new {
     my $class = shift;
@@ -24,63 +30,76 @@ sub new {
     return $self;
 }
 
+# ido - perl dispatcher
+sub perl_dispatcher {
+    my $func = shift;
+    my @params = @_;
+    my @perlParams;
+    
+    my $i = 0;
+    while (@params) {
+        my $type = shift(@params);
+        if ($type eq 'XML::LibXML::Literal' or 
+            $type eq 'XML::LibXML::Number' or
+            $type eq 'XML::LibXML::Boolean')
+        {
+            my $val = shift(@params);
+            unshift(@perlParams, $USE_LIBXML_DATA_TYPES ? $type->new($val) : $val);
+        }
+        elsif ($type eq 'XML::LibXML::NodeList') {
+            my $node_count = shift(@params);
+            my @nodes = splice(@params, 0, $node_count);
+            # warn($_->getName) for @nodes;
+            unshift(@perlParams, $type->new(@nodes));
+        }
+    }
+    
+    $func = "main::$func" unless ref($func) || $func =~ /(.+)::/;
+    no strict 'refs';
+    my $res = $func->(@perlParams);
+    return $res;
+}
+
+
 sub xpath_to_string {
     my @results;
     while (@_) {
         my $value = shift(@_); $value = '' unless defined $value;
         push @results, $value;
-        next if @results % 2;
-        if ($value =~ s/'/', "'", '/g) {
-	    $results[-1] = "concat('$value')";
+        if (@results % 2) {
+            # key
+            $results[-1] =~ s/:/_/g; # XSLT doesn't like names with colons
         }
         else {
-            $results[-1] = "'$results[-1]'";
+            if ($value =~ s/'/', "'", '/g) {
+	        $results[-1] = "concat('$value')";
+            }
+            else {
+                $results[-1] = "'$results[-1]'";
+            }
         }
     }
     return @results;
 }
 
 sub callbacks {
-    my $self = shift;
-    if (@_) {
-        my ($match, $open, $read, $close) = @_;
-
-        $self->{XML_LIBXSLT_MATCH} = $match ;
-        $self->{XML_LIBXSLT_OPEN} = $open ;
-        $self->{XML_LIBXSLT_READ} = $read ;
-        $self->{XML_LIBXSLT_CLOSE} = $close ;
-    }
-    else {
-        return
-            $self->{XML_LIBXSLT_MATCH},
-            $self->{XML_LIBXSLT_OPEN},
-            $self->{XML_LIBXSLT_READ},
-            $self->{XML_LIBXSLT_CLOSE};
-    }
+    die "callbacks() never worked and has been removed."
 }
 
 sub match_callback {
-    my $self = shift;
-    $self->{XML_LIBXSLT_MATCH} = shift if scalar @_;
-    return $self->{XML_LIBXSLT_MATCH};
+    die "match_callback never worked and has been removed.\nPlease set \$XML::LibXML::match_cb instead";
 }
 
 sub open_callback {
-    my $self = shift;
-    $self->{XML_LIBXSLT_OPEN} = shift if scalar @_;
-    return $self->{XML_LIBXSLT_OPEN};
+    die "open_callback never worked and has been removed.\nPlease set \$XML::LibXML::open_cb instead";
 }
 
 sub read_callback {
-    my $self = shift;
-    $self->{XML_LIBXSLT_READ} = shift if scalar @_;
-    return $self->{XML_LIBXSLT_READ};
+    die "read_callback never worked and has been removed.\nPlease set \$XML::LibXML::read_cb instead";
 }
 
 sub close_callback {
-    my $self = shift;
-    $self->{XML_LIBXSLT_CLOSE} = shift if scalar @_;
-    return $self->{XML_LIBXSLT_CLOSE};
+    die "close_callback never worked and has been removed.\nPlease set \$XML::LibXML::close_cb instead";
 }
 
 sub parse_stylesheet {
@@ -191,10 +210,15 @@ current date and time as a string:
   </xsl:template>
   </xsl:stylesheet>
 
-If you pass parameters to your extension function they are all down
-converted into strings at runtime - there is no internal access to
-nodelists. The return from your function is also just a plain string,
-there is no support for returning a nodelist.
+Parameters can be in whatever format you like. If you pass in a nodelist
+it will be a XML::LibXML::NodeList object in your perl code, but ordinary
+values (strings, numbers and booleans) will be ordinary perl scalars. If
+you wish them to be C<XML::LibXML::Literal>, C<XML::LibXML::Number> and
+C<XML::LibXML::Number> values respectively then set the variable
+C<$XML::LibXSLT::USE_LIBXML_DATA_TYPES> to a true value. Return values can
+be a nodelist or a plain value - the code will just do the right thing.
+But only a single return value is supported (a list is not converted to
+a nodelist).
 
 =head1 API
 
