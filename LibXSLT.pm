@@ -1,4 +1,4 @@
-# $Id: LibXSLT.pm,v 1.23 2001/07/20 16:02:36 matt Exp $
+# $Id: LibXSLT.pm,v 1.27 2001/11/14 12:11:45 matt Exp $
 
 package XML::LibXSLT;
 
@@ -9,7 +9,7 @@ use XML::LibXML;
 
 require Exporter;
 
-$VERSION = "1.09";
+$VERSION = "1.30";
 
 require DynaLoader;
 
@@ -40,6 +40,24 @@ sub xpath_to_string {
         }
     }
     return %params;
+}
+
+sub callbacks {
+    my $self = shift;
+    if (@_) {
+        my ($match, $open, $read, $close) = @_;
+        $self->match_callback($match);
+        $self->open_callback($open);
+        $self->read_callback($read);
+        $self->close_callback($close);
+    }
+    else {
+        return
+            $self->match_callback,
+            $self->open_callback,
+            $self->read_callback,
+            $self->close_callback;
+    }
 }
 
 1;
