@@ -1,10 +1,10 @@
-# $Id: LibXSLT.pm,v 1.48 2004/03/01 18:42:25 matt Exp $
+# $Id: LibXSLT.pm,v 1.51 2005/08/05 15:00:06 matt Exp $
 package XML::LibXSLT;
 
 use strict;
 use vars qw($VERSION @ISA $USE_LIBXML_DATA_TYPES);
 
-use XML::LibXML 1.57;
+use XML::LibXML 1.58;
 use XML::LibXML::Literal;
 use XML::LibXML::Boolean;
 use XML::LibXML::Number;
@@ -12,7 +12,7 @@ use XML::LibXML::NodeList;
 
 require Exporter;
 
-$VERSION = "1.57";
+$VERSION = "1.58";
 
 require DynaLoader;
 

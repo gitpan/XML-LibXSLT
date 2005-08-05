@@ -1,4 +1,4 @@
-/* $Id: LibXSLT.xs,v 1.58 2004/03/01 18:42:43 matt Exp $ */
+/* $Id: LibXSLT.xs,v 1.61 2005/08/05 13:31:54 matt Exp $ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,6 +25,7 @@ extern "C" {
 #include "perl.h"
 #include "XSUB.h"
 #include "perl-libxml-mm.h"
+#include "ppport.h"
 #ifdef __cplusplus
 }
 #endif
@@ -53,11 +54,6 @@ extern "C" {
 static SV * LibXSLT_debug_cb = NULL;
 static HV * LibXSLT_HV_allCallbacks = NULL;
 
-static SV * LibXSLT_match_cb = NULL;
-static SV * LibXSLT_read_cb  = NULL;
-static SV * LibXSLT_open_cb  = NULL;
-static SV * LibXSLT_close_cb = NULL;
-
 int
 LibXSLT_input_match(char const * filename)
 {
@@ -65,10 +61,7 @@ LibXSLT_input_match(char const * filename)
     SV * global_cb;
     SV * callback = NULL;
 
-    if (LibXSLT_match_cb && SvTRUE(LibXSLT_match_cb)) {
-        callback = LibXSLT_match_cb;
-    }
-    else if ((global_cb = perl_get_sv("XML::LibXML::match_cb", FALSE))
+    if ((global_cb = perl_get_sv("XML::LibXML::match_cb", FALSE))
              && SvTRUE(global_cb)) {
         callback = global_cb;
     }
@@ -119,14 +112,11 @@ LibXSLT_input_match(char const * filename)
 void *
 LibXSLT_input_open(char const * filename)
 {
-    SV * results;
     SV * global_cb;
+    SV * results = NULL;
     SV * callback = NULL;
 
-    if (LibXSLT_open_cb && SvTRUE(LibXSLT_open_cb)) {
-        callback = LibXSLT_open_cb;
-    }
-    else if ((global_cb = perl_get_sv("XML::LibXML::open_cb", FALSE))
+    if ((global_cb = perl_get_sv("XML::LibXML::open_cb", FALSE))
             && SvTRUE(global_cb)) {
         callback = global_cb;
     }
@@ -155,7 +145,6 @@ LibXSLT_input_open(char const * filename)
 
         if (SvTRUE(ERRSV)) {
             croak("input callback died: %s", SvPV_nolen(ERRSV));
-            POPs ;
         }
 
         results = POPs;
@@ -180,10 +169,7 @@ LibXSLT_input_read(void * context, char * buffer, int len)
     SV * callback = NULL;
     SV * ctxt = (SV *)context;
 
-    if (LibXSLT_read_cb && SvTRUE(LibXSLT_read_cb)) {
-        callback = LibXSLT_read_cb;
-    }
-    else if ((global_cb = perl_get_sv("XML::LibXML::read_cb", FALSE))
+    if ((global_cb = perl_get_sv("XML::LibXML::read_cb", FALSE))
             && SvTRUE(global_cb)) {
         callback = global_cb;
     }
@@ -242,10 +228,7 @@ LibXSLT_input_close(void * context)
     SV * callback = NULL;
     SV * ctxt = (SV *)context;
 
-    if (LibXSLT_close_cb && SvTRUE(LibXSLT_close_cb)) {
-        callback = LibXSLT_close_cb;
-    }
-    else if ((global_cb = perl_get_sv("XML::LibXML::close_cb", FALSE))
+    if ((global_cb = perl_get_sv("XML::LibXML::close_cb", FALSE))
             && SvTRUE(global_cb)) {
         callback = global_cb;
     }
@@ -270,13 +253,8 @@ LibXSLT_input_close(void * context)
 
         SvREFCNT_dec(ctxt);
 
-        if (!count) {
-            croak("close callback failed");
-        }
-
         if (SvTRUE(ERRSV)) {
             croak("close callback died: %s", SvPV_nolen(ERRSV));
-            POPs ;
         }
 
         PUTBACK;
@@ -719,8 +697,10 @@ _parse_stylesheet(self, sv_doc)
         }
         RETVAL = xsltParseStylesheetDoc(doc_copy);
 
+        /*
         xmlCleanupInputCallbacks();
         xmlRegisterDefaultInputCallbacks();
+        */
 
         if (RETVAL == NULL) {
             XSRETURN_UNDEF;
@@ -748,8 +728,10 @@ _parse_stylesheet_file(self, filename)
         }
         RETVAL = xsltParseStylesheetFile(filename);
 
+        /*
         xmlCleanupInputCallbacks();
         xmlRegisterDefaultInputCallbacks();
+        */
 
         if (RETVAL == NULL) {
             XSRETURN_UNDEF;
@@ -808,8 +790,10 @@ transform(self, sv_doc, ...)
                               (xmlInputCloseCallback) LibXSLT_input_close);
         real_dom = xsltApplyStylesheet(self, doc, xslt_params);
 
+        /*
         xmlCleanupInputCallbacks();
         xmlRegisterDefaultInputCallbacks();
+        */
 
         if (real_dom == NULL) {
             if (SvTRUE(ERRSV)) {
@@ -923,6 +907,8 @@ output_string(self, sv_doc)
             croak("output to scalar failed");
         }
         xmlOutputBufferClose(output);
+        if (xmlStrEqual(encoding, (const xmlChar *) "UTF-8"))
+            SvUTF8_on( results );
         RETVAL = results;
     OUTPUT:
         RETVAL
