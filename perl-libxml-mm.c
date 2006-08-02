@@ -1,6 +1,6 @@
 /**
  * perl-libxml-mm.c
- * $Id: perl-libxml-mm.c,v 1.4 2004/02/29 17:50:52 matt Exp $
+ * $Id: perl-libxml-mm.c,v 1.5 2005/08/05 19:32:44 matt Exp $
  *
  * Basic concept:
  * perl varies in the implementation of UTF8 handling. this header (together
@@ -130,8 +130,7 @@ x_PmmNewNode(xmlNodePtr node)
     ProxyNodePtr proxy;
 
     if ( node->_private == NULL ) {
-        proxy = (ProxyNodePtr)malloc(sizeof(ProxyNode));
-        /* proxy = (ProxyNodePtr)Newz(0, proxy, 0, ProxyNode); */
+        Newc(0, proxy, 1, ProxyNode, ProxyNode);
         if (proxy != NULL) {
             proxy->node  = node;
             proxy->owner   = NULL;
@@ -238,7 +237,7 @@ x_PmmREFCNT_dec( ProxyNodePtr node )
                 xs_warn( "STANDALONE REAL DELETE" );
                 x_PmmFreeNode( libnode );
             }
-            free( node );
+            Safefree( node );
         }
     }
     return retval;

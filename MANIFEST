@@ -28,3 +28,4 @@ Driver/LibXSLT.pm
 Driver/Sablotron.pm
 Driver/BaseClass.pm
 testcases/default.conf
+META.yml                                 Module meta-data (added by MakeMaker)
