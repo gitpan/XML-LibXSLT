@@ -1,4 +1,4 @@
-# $Id: Makefile.PL,v 1.23 2005/08/05 15:00:06 matt Exp $
+# $Id: Makefile.PL 184 2006-08-26 17:49:07Z pajas $
 
 use ExtUtils::MakeMaker;
 
@@ -13,28 +13,41 @@ while($_ = shift) {
 
 my $DEBUG = delete $config{DEBUG};
 
-# get libs and inc from gnome-config
-eval {
-    print "running xslt-config... ";
-    my $ver = backtick('xslt-config --version');
-    my ($major, $minor, $point) = $ver =~ /(\d+)\.(\d+)\.(\d+)/g;
-    die "VERSION" unless $major > 1 || $minor > 0 || $point >= 6;
-    $config{LIBS} ||= backtick('xslt-config --libs');
-    $config{INC} ||= backtick('xslt-config --cflags');
-    print "ok\n";
-};
-if ($@) {
-    print "failed\n";
-    if ($@ =~ /^VERSION/) { 
-        die "XML::LibXSLT needs libxslt version 1.0.6 or higher\n";
+unless ( $is_Win32 ) { # cannot get config in W32
+    my $xsltcfg = "xslt-config";
+    my $libprefix = $ENV{XSLTPREFIX} || $config{XSLTPREFIX};
+
+    delete $config{XSLTPREFIX}; # delete if exists, otherwise MakeMaker gets confused
+
+    if ( defined $libprefix ) {
+        $xsltcfg = $libprefix . '/bin/' . $xsltcfg;
     }
-    warn "*** ", $@ if $DEBUG;
-    warn "using fallback values for LIBS and INC\n";
-    # backtick fails if gnome-config didn't exist...
-    $config{LIBS} = '-L/usr/local/lib -L/usr/lib -lxslt -lxml2 -lz -lm';
-    $config{INC} = '-I/usr/local/include -I/usr/include';
-    
-    print <<OPT;
+
+    # if a user defined INC and LIBS on the command line we must not 
+    # override them
+    if ( not defined $config{LIBS} and not defined $config{INC} ) {
+        # get libs and inc from gnome-config
+        eval {
+            print "running xslt-config... ";
+            my $ver = backtick("$xsltcfg --version");
+            my ($major, $minor, $point) = $ver =~ /(\d+)\.(\d+)\.(\d+)/g;
+            die "VERSION" unless $major > 1 || $minor > 0 || $point >= 6;
+            $config{LIBS} ||= backtick("$xsltcfg --libs");
+            $config{INC} ||= backtick("$xsltcfg --cflags");
+            print "ok\n";
+        };
+        if ($@) {
+            print "failed\n";
+            if ($@ =~ /^VERSION/) { 
+                die "XML::LibXSLT needs libxslt version 1.0.6 or higher\n";
+            }
+            warn "*** ", $@ if $DEBUG;
+            warn "using fallback values for LIBS and INC\n";
+            # backtick fails if gnome-config didn't exist...
+            $config{LIBS} = '-L/usr/local/lib -L/usr/lib -lxslt -lxml2 -lz -lm';
+            $config{INC} = '-I/usr/local/include -I/usr/include';
+            
+            print <<OPT;
 options:
   LIBS='$config{LIBS}'
   INC='$config{INC}'
@@ -42,7 +55,8 @@ If this is wrong, Re-run as:
   \$ $^X Makefile.PL LIBS='-L/path/to/lib' INC='-I/path/to/include'
 
 OPT
-
+        }
+    }
 }
 
 if ($config{LIBS} !~ /\-lxslt/) {
@@ -70,7 +84,7 @@ WriteMakefile(
     'VERSION_FROM' => 'LibXSLT.pm', # finds $VERSION
     'AUTHOR'    => 'Matt Sergeant',
     'ABSTRACT'  => 'Interface to Gnome libxslt library',
-    'PREREQ_PM' => { 'XML::LibXML' => "1.58", },
+    'PREREQ_PM' => { 'XML::LibXML' => "1.60", },
     'OBJECT'     => '$(O_FILES)',
     %config,
 );

@@ -1,6 +1,6 @@
 /**
  * perl-libxml-mm.c
- * $Id: perl-libxml-mm.c,v 1.5 2005/08/05 19:32:44 matt Exp $
+ * $Id: perl-libxml-mm.c 178 2006-08-04 14:55:36Z pajas $
  *
  * Basic concept:
  * perl varies in the implementation of UTF8 handling. this header (together
@@ -44,7 +44,6 @@ x_PmmNodeTypeName( xmlNodePtr elem ){
     const char *name = "XML::LibXML::Node";
 
     if ( elem != NULL ) {
-        char * ptrHlp;
         switch ( elem->type ) {
         case XML_ELEMENT_NODE:
             name = "XML::LibXML::Element";   

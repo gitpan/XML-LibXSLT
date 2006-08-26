@@ -1,10 +1,10 @@
-# $Id: LibXSLT.pm,v 1.53 2006/07/28 11:11:04 pajas Exp $
+# $Id: LibXSLT.pm 184 2006-08-26 17:49:07Z pajas $
 package XML::LibXSLT;
 
 use strict;
 use vars qw($VERSION @ISA $USE_LIBXML_DATA_TYPES $MatchCB $ReadCB $OpenCB $CloseCB);
 
-use XML::LibXML 1.59;
+use XML::LibXML 1.60;
 use XML::LibXML::Literal;
 use XML::LibXML::Boolean;
 use XML::LibXML::Number;
@@ -14,7 +14,7 @@ use Carp;
 
 require Exporter;
 
-$VERSION = "1.59";
+$VERSION = "1.60";
 
 require DynaLoader;
 
@@ -572,11 +572,18 @@ new XML::LibXML::Document. Extra hash entries are used as parameters.
 
 =head2 output_string(result)
 
-Returns a scalar that is the XSLT rendering of the XML::LibXML::Document
-object using the desired output format (specified in the xsl:output tag
-in the stylesheet). Note that you can also call $result->toString, but
-that will *always* output the document in XML format, and in UTF8, which
-may not be what you asked for in the xsl:output tag.
+Returns a scalar that is the XSLT rendering of the
+XML::LibXML::Document object using the desired output format
+(specified in the xsl:output tag in the stylesheet). Note that you can
+also call $result->toString, but that will *always* output the
+document in XML format, and in UTF8, which may not be what you asked
+for in the xsl:output tag.
+
+Note that the returned scalar is always bytes not characters, i.e. it
+is *not* marked with the UTF8 flag even if the desired output encoding
+was in fact UTF-8. If the output encoding was UTF-8 and you wish the
+scalar to be treated by Perl as characters, apply
+Encode::_utf8_on($result) on the returned scalar.
 
 =head2 output_fh(result, fh)
 
