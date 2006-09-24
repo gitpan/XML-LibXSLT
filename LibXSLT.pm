@@ -1,4 +1,4 @@
-# $Id: LibXSLT.pm 184 2006-08-26 17:49:07Z pajas $
+# $Id: LibXSLT.pm 186 2006-09-19 09:02:23Z pajas $
 package XML::LibXSLT;
 
 use strict;
@@ -14,7 +14,7 @@ use Carp;
 
 require Exporter;
 
-$VERSION = "1.60";
+$VERSION = "1.61";
 
 require DynaLoader;
 
@@ -648,7 +648,7 @@ those Redmond boys!
 
 Matt Sergeant, matt@sergeant.org
 
-Copyright 2001, AxKit.com Ltd. All rights reserved.
+Copyright 2001-2006, AxKit.com Ltd. All rights reserved.
 
 =head1 SEE ALSO
 
