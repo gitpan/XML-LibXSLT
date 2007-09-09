@@ -1,4 +1,4 @@
-# $Id: LibXSLT.pm 192 2006-11-17 21:01:06Z pajas $
+# $Id: LibXSLT.pm 198 2007-09-09 21:48:25Z pajas $
 package XML::LibXSLT;
 
 use strict;
@@ -14,7 +14,7 @@ use Carp;
 
 require Exporter;
 
-$VERSION = "1.62";
+$VERSION = "1.63";
 
 require DynaLoader;
 
