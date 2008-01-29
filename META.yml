@@ -1,11 +1,14 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         XML-LibXSLT
-version:      1.63
-version_from: LibXSLT.pm
-installdirs:  site
-requires:
-    XML::LibXML:                   1.60
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.30
+--- #YAML:1.0
+name:                XML-LibXSLT
+version:             1.66
+abstract:            Interface to Gnome libxslt library
+license:             ~
+author:              
+    - Matt Sergeant
+generated_by:        ExtUtils::MakeMaker version 6.42
+distribution_type:   module
+requires:     
+    XML::LibXML:                   1.66
+meta-spec:
+    url:     http://module-build.sourceforge.net/META-spec-v1.3.html
+    version: 1.3

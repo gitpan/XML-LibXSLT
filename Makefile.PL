@@ -1,4 +1,4 @@
-# $Id: Makefile.PL 197 2007-09-08 18:11:11Z pajas $
+# $Id: Makefile.PL 205 2008-01-29 21:02:48Z pajas $
 
 use ExtUtils::MakeMaker;
 use Config;
@@ -32,7 +32,8 @@ unless ( $is_Win32 ) { # cannot get config in W32
             print "running xslt-config... ";
             my $ver = backtick("$xsltcfg --version");
             my ($major, $minor, $point) = $ver =~ /(\d+)\.(\d+)\.(\d+)/g;
-            die "VERSION" unless $major > 1 || $minor > 0 || $point >= 6;
+            die "VERSION" unless $major > 1 || $minor > 1 ||
+	      ($major>=1 and $minor >=1 and $point >= 18);
             $config{LIBS} ||= backtick("$xsltcfg --libs");
             $config{INC} ||= backtick("$xsltcfg --cflags");
             print "ok\n";
@@ -40,7 +41,8 @@ unless ( $is_Win32 ) { # cannot get config in W32
         if ($@) {
             print "failed\n";
             if ($@ =~ /^VERSION/) { 
-                die "XML::LibXSLT needs libxslt version 1.0.6 or higher\n";
+                print STDERR "XML::LibXSLT needs libxslt version 1.1.18 or higher\n";
+		exit 0; # 0 recommended by http://cpantest.grango.org (Notes for CPAN Authors)
             }
             warn "*** ", $@ if $DEBUG;
             warn "using fallback values for LIBS and INC\n";
@@ -65,7 +67,7 @@ if ($config{LIBS} !~ /\-lxslt/) {
 }
 
 if (!have_library("xslt")) {
-    die <<DEATH;
+    print STDERR <<DEATH;
 libxslt not found
 Try setting LIBS and INC values on the command line
 Or get libxslt and libxml2 from 
@@ -73,6 +75,7 @@ Or get libxslt and libxml2 from
 If you install via RPMs, make sure you also install the -devel
 RPMs, as this is where the headers (.h files) are.
 DEATH
+exit 0; # 0 recommended by http://cpantest.grango.org (Notes for CPAN Authors)
 }
 
 
@@ -112,7 +115,7 @@ WriteMakefile(
     'VERSION_FROM' => 'LibXSLT.pm', # finds $VERSION
     'AUTHOR'    => 'Matt Sergeant',
     'ABSTRACT'  => 'Interface to Gnome libxslt library',
-    'PREREQ_PM' => { 'XML::LibXML' => "1.60", },
+    'PREREQ_PM' => { 'XML::LibXML' => "1.66", },
     'OBJECT'     => '$(O_FILES)',
     %config,
 );
