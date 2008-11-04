@@ -1,6 +1,6 @@
 /**
  * perl-libxml-mm.h
- * $Id: perl-libxml-mm.h 200 2008-01-28 11:32:58Z pajas $
+ * $Id: perl-libxml-mm.h 208 2008-11-04 13:29:43Z pajas $
  *
  * Basic concept:
  * perl varies in the implementation of UTF8 handling. this header (together
@@ -50,7 +50,6 @@ struct _ProxyNode {
     xmlNodePtr owner;
     int count;
     int encoding;
-    struct _ProxyNode * _registry;
 };
 
 /* helper type for the proxy structure */
@@ -74,6 +73,27 @@ typedef ProxyNode* ProxyNodePtr;
 #define x_PmmNodeEncoding(node) ((ProxyNodePtr)(node->_private))->encoding
 #define x_PmmDocEncoding(node) (node->charset)
 
+#ifndef NO_XML_LIBXML_THREADS
+#ifdef USE_ITHREADS
+#define XML_LIBXML_THREADS
+#endif
+#endif
+
+#ifdef XML_LIBXML_THREADS
+
+/* structure for storing thread-local refcount */
+struct _LocalProxyNode {
+	ProxyNodePtr proxy;
+	int count;
+};
+typedef struct _LocalProxyNode LocalProxyNode;
+typedef LocalProxyNode* LocalProxyNodePtr;
+
+
+#define x_PmmUSEREGISTRY		(x_PROXY_NODE_REGISTRY_MUTEX != NULL)
+#define x_PmmREGISTRY		(INT2PTR(xmlHashTablePtr,SvIV(SvRV(get_sv("XML::LibXML::__PROXY_NODE_REGISTRY",0)))))
+
+#endif /* XML_LIBXML_THREADS */
 
 ProxyNodePtr
 x_PmmNewNode(xmlNodePtr node);

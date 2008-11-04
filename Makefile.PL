@@ -1,7 +1,15 @@
-# $Id: Makefile.PL 205 2008-01-29 21:02:48Z pajas $
+# $Id: Makefile.PL 209 2008-11-04 14:00:45Z pajas $
+
+BEGIN {
+  if ($] < 5.006_001) {
+    warn "\nSorry, at least Perl 5.6.1 is required for this module!\n\n";
+    exit;
+  }
+}
 
 use ExtUtils::MakeMaker;
 use Config;
+
 
 $|=0;
 
@@ -13,6 +21,12 @@ while($_ = shift) {
 }
 
 my $DEBUG = delete $config{DEBUG};
+
+if ( $] < 5.008 or $config{NO_THREADS} ) {
+  warn "disabling XML::LibXML support for Perl threads\n";
+  $config{DEFINE} .= " -DNO_LIBXML_THREADS";
+}
+delete $config{NO_THREADS};
 
 unless ( $is_Win32 ) { # cannot get config in W32
     my $xsltcfg = "xslt-config";
@@ -115,7 +129,7 @@ WriteMakefile(
     'VERSION_FROM' => 'LibXSLT.pm', # finds $VERSION
     'AUTHOR'    => 'Matt Sergeant',
     'ABSTRACT'  => 'Interface to Gnome libxslt library',
-    'PREREQ_PM' => { 'XML::LibXML' => "1.66", },
+    'PREREQ_PM' => { 'XML::LibXML' => "1.67", },
     'OBJECT'     => '$(O_FILES)',
     %config,
 );

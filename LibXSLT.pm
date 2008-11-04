@@ -1,10 +1,10 @@
-# $Id: LibXSLT.pm 205 2008-01-29 21:02:48Z pajas $
+# $Id: LibXSLT.pm 209 2008-11-04 14:00:45Z pajas $
 package XML::LibXSLT;
 
 use strict;
 use vars qw($VERSION @ISA $USE_LIBXML_DATA_TYPES $MatchCB $ReadCB $OpenCB $CloseCB);
 
-use XML::LibXML 1.66;
+use XML::LibXML 1.67;
 use XML::LibXML::Literal;
 use XML::LibXML::Boolean;
 use XML::LibXML::Number;
@@ -15,7 +15,7 @@ use Carp;
 
 require Exporter;
 
-$VERSION = "1.66";
+$VERSION = "1.67";
 
 require DynaLoader;
 
@@ -25,7 +25,7 @@ bootstrap XML::LibXSLT $VERSION;
 
 # the following magic lets XML::LibXSLT internals know
 # where to register XML::LibXML proxy nodes
-__lib_init_proxy_registry(XML::LibXML::__proxy_registry());
+INIT_THREAD_SUPPORT() if XML::LibXML::threads_shared_enabled();
 $USE_LIBXML_DATA_TYPES = 0;
 }
 
