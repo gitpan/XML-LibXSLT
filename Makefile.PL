@@ -1,4 +1,4 @@
-# $Id: Makefile.PL 209 2008-11-04 14:00:45Z pajas $
+# $Id: Makefile.PL 211 2008-11-05 10:30:33Z pajas $
 
 BEGIN {
   if ($] < 5.006_001) {
@@ -24,7 +24,7 @@ my $DEBUG = delete $config{DEBUG};
 
 if ( $] < 5.008 or $config{NO_THREADS} ) {
   warn "disabling XML::LibXML support for Perl threads\n";
-  $config{DEFINE} .= " -DNO_LIBXML_THREADS";
+  $config{DEFINE} .= " -DNO_XML_LIBXML_THREADS";
 }
 delete $config{NO_THREADS};
 

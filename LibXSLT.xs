@@ -1,4 +1,4 @@
-/* $Id: LibXSLT.xs 208 2008-11-04 13:29:43Z pajas $ */
+/* $Id: LibXSLT.xs 214 2008-11-05 13:24:52Z pajas $ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -738,6 +738,17 @@ BOOT:
 #ifdef HAVE_EXSLT
     exsltRegisterAll();
 #endif
+
+int
+HAVE_EXSLT()
+    CODE:
+#ifdef HAVE_EXSLT
+        RETVAL = 1;
+#else
+        RETVAL = 0;
+#endif
+    OUTPUT:
+        RETVAL
 
 char *
 LIBXSLT_DOTTED_VERSION()

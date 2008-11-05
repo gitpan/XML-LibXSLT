@@ -1,4 +1,4 @@
-# $Id: LibXSLT.pm 209 2008-11-04 14:00:45Z pajas $
+# $Id: LibXSLT.pm 214 2008-11-05 13:24:52Z pajas $
 package XML::LibXSLT;
 
 use strict;
@@ -15,7 +15,7 @@ use Carp;
 
 require Exporter;
 
-$VERSION = "1.67";
+$VERSION = "1.68";
 
 require DynaLoader;
 
@@ -948,6 +948,10 @@ XML::LibXSLT as a string, e.g. "1.1.18".
 Returns version number of libxslt library to which XML::LibXSLT is
 linked at runtime (either dynamically or statically). For example, for
 example, for libxslt.so.1.1.18, it will return 10118.
+
+=item XML::LibXSLT::HAVE_EXLT()
+
+Returns 1 if the module was compiled with libexslt, 0 otherwised.
 
 =back
 
