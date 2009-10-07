@@ -1,4 +1,10 @@
-# $Id: Makefile.PL 211 2008-11-05 10:30:33Z pajas $
+# -------------------------------------------------------------------------- #
+# $Id: Makefile.PL 228 2009-10-07 12:25:23Z pajas $
+# -------------------------------------------------------------------------- #
+# Makefile.PL for XML::LibXML.
+# This file is required to generate a localized Makefile
+# -------------------------------------------------------------------------- #
+
 
 BEGIN {
   if ($] < 5.006_001) {
@@ -76,11 +82,46 @@ OPT
     }
 }
 
-if ($config{LIBS} !~ /\-lxslt/) {
-    $config{LIBS} .= ' -lxslt -lxml2 -lz -lm';
+if ($config{LIBS} !~ /\-l(lib)?xslt\b/) {
+    # in this case we are not able to run xml2-config. therefore we need to
+    # expand the libz as well.
+  if ($is_Win32) {
+    if( $ENV{ACTIVEPERL_MINGW} ) {
+      $config{LIBS} .= ' -llibxslt.lib -llibxml2.lib';
+    } else {
+      $config{LIBS} .= ' -llibxslt -llibxml2';
+    }
+  } else {
+    $config{LIBS} .= ' -lxml2 -lz';
+  }
 }
 
-if (!have_library("xslt")) {
+if ($config{LIBS} !~ /\-lz(lib)?\b/ and !($is_win32 && $config{LIBS} !~ /\-lzlib\b/)) {
+    # note if libxml2 has not -lz within its cflags, we should not use
+    # it! We should trust libxml2 and assume libz is not available on the
+    # current system (this is ofcourse not true with win32 systems.
+    # $config{LIBS} .= $is_Win32 ? ' -lzlib' :' -lz';
+    if ( $config{DEBUG} ) {
+        warn "zlib was not configured\n";
+        warn "set zlib\n" if $is_Win32;
+    }
+  if ($is_Win32) {
+    if( $ENV{ACTIVEPERL_MINGW} ) {
+      $config{LIBS} .= '';
+    } else {
+      $config{LIBS} .= ' -lzlib';
+    }
+  } else {
+    $config{LIBS} .= ' -lz';
+  }
+}
+
+if ($config{LIBS} !~ /\-lm\b/) {
+    # math support is important, but is not available separately in W32
+    $config{LIBS} .= $is_Win32 ? '' :' -lm';
+}
+
+if (!have_library($is_Win32 ? "libxslt" : "xslt")) {
     print STDERR <<DEATH;
 libxslt not found
 Try setting LIBS and INC values on the command line
@@ -93,8 +134,10 @@ exit 0; # 0 recommended by http://cpantest.grango.org (Notes for CPAN Authors)
 }
 
 
-if (have_library("exslt")) {
-  my $exslt_defaults = q/-lexslt -lgcrypt -lgpg-error/;
+if (have_library($is_Win32 ? "libexslt" : "exslt")) {
+  my $exslt_defaults = $is_Win32 ?
+    ($ENV{ACTIVEPERL_MINGW} ? q/-llibexslt.lib/ : q/-llibexslt/) :
+                              q/-lexslt/; # -lgcrypt -lgpg-error/;
   my $exsltcfg = 'pkg-config libexslt';
   my ($exslt_libs,$exslt_inc);
   eval {
@@ -124,12 +167,41 @@ if ($DEBUG) {
   print "INC: $config{INC}\n";
 }
 
+my $ldflags = delete $config{LDFLAGS};
+if ($ldflags) {
+    $config{dynamic_lib} = { OTHERLDFLAGS => " $ldflags " };
+}
+
+# Avoid possible shared library name conflict. On Win32 systems
+# the name of system DLL libxlst.dll clashes with module's LibXSLT.dll.
+# To handle this we are gonna rename module's DLL to LibXSLT.xs.dll.
+if ($is_Win32) {
+  if ($] eq '5.010000') {
+    print STDERR <<5100BUG;
+******************************** !!!WARNING!!! ******************************** 
+According to the version string you are running a win32 perl 5.10.0 that is
+known to be suffering from dynaloader bug that prevents using non-default 
+module's DLL name. Therefore we have to use LibXSLT.dll that will clash with the
+standard name of xslt library DLL. Please consider renaming your xslt library
+to e.g. libxslt_win32.dll and then make the appropriate changes to this module's
+build process to look for that instead of standard libxslt.dll. If you do not
+make the proposed changes you will got during the tests many error popups with 
+slightly confusing message about "xsltApplyOneTemplate" function.  
+This bug is not present in perl 5.8.* and will be fixed in 5.10.1.
+*******************************************************************************
+5100BUG
+  }
+  else {
+    $config{DLEXT} = 'xs.dll' if ($is_Win32);
+  }
+}
+
 WriteMakefile(
     'NAME'	=> 'XML::LibXSLT',
     'VERSION_FROM' => 'LibXSLT.pm', # finds $VERSION
     'AUTHOR'    => 'Matt Sergeant',
     'ABSTRACT'  => 'Interface to Gnome libxslt library',
-    'PREREQ_PM' => { 'XML::LibXML' => "1.67", },
+    'PREREQ_PM' => { 'XML::LibXML' => "1.70", },
     'OBJECT'     => '$(O_FILES)',
     %config,
 );
@@ -191,11 +263,11 @@ sub rm_fr {
 }
 
 sub xsystem {
-    my $command = shift;
+  my (@command)=@_;
     if ($DEBUG) {
-        print $command, "\n";
-        if (system($command) != 0) {
-            die "system call to '$command' failed";
+        print "@command\n";
+        if (system(@command) != 0) {
+            die "system call to '@command' failed";
         }
         return 1;
     }
@@ -203,11 +275,11 @@ sub xsystem {
     open(OLDERR, ">&STDERR");
     open(STDOUT, ">$DEVNULL");
     open(STDERR, ">$DEVNULL");
-    my $retval = system($command);
+    my $retval = system(@command);
     open(STDOUT, ">&OLDOUT");
     open(STDERR, ">&OLDERR");
     if ($retval != 0) {
-        die "system call to '$command' failed";
+        die "system call to '@command' failed";
     }
     return 1;
 }
@@ -298,9 +370,10 @@ use Test; BEGIN { plan tests => 1; } END { ok(\$loaded) }
 use Conftest; \$loaded++;
 EOT
     close($cfile);
-    xsystem("$^X Makefile.PL " . join(' ', map { "'$_=$config{$_}'" } keys %config));
-    my $file = $config{MAKEAPERL} ? "-f Makefile.aperl FIRST_MAKEFILE=Makefile.aperl" : "";
-    xsystem("$Config{make} $file test 'OTHERLDFLAGS=$opt'");
+    xsystem($^X,'Makefile.PL',map "$_=$config{$_}", keys %config);
+    xsystem($Config{make},
+	    ($config{MAKEAPERL} ? qw(-f Makefile.aperl FIRST_MAKEFILE=Makefile.aperl) : ()),
+	    'test'); #,"OTHERLDFLAGS=".$opt);
 }
 
 sub try_link {

@@ -1,25 +1,39 @@
-# $Id: LibXSLT.pm 214 2008-11-05 13:24:52Z pajas $
+# $Id: LibXSLT.pm 228 2009-10-07 12:25:23Z pajas $
+#
+# This is free software, you may use it and distribute it under the same terms as
+# Perl itself.
+#
+# Copyright 2001-2009 AxKit.com Ltd.
+#
+#
 package XML::LibXSLT;
 
 use strict;
 use vars qw($VERSION @ISA $USE_LIBXML_DATA_TYPES $MatchCB $ReadCB $OpenCB $CloseCB);
 
-use XML::LibXML 1.67;
+sub REQUIRE_XML_LIBXML_ABI_VERSION { 2 }
+
+use XML::LibXML 1.70;
 use XML::LibXML::Literal;
 use XML::LibXML::Boolean;
 use XML::LibXML::Number;
 use XML::LibXML::NodeList;
+
 
 BEGIN {
 use Carp;
 
 require Exporter;
 
-$VERSION = "1.68";
+$VERSION = "1.70";
 
 require DynaLoader;
 
 @ISA = qw(DynaLoader);
+
+# avoid possible shared library name conflict on Win32
+# not using this trick on 5.10.0 (suffering from DynaLoader bug)
+local $DynaLoader::dl_dlext = "xs.$DynaLoader::dl_dlext" if (($^O eq 'MSWin32') && ($] ne '5.010000'));
 
 bootstrap XML::LibXSLT $VERSION;
 
@@ -28,6 +42,7 @@ bootstrap XML::LibXSLT $VERSION;
 INIT_THREAD_SUPPORT() if XML::LibXML::threads_shared_enabled();
 $USE_LIBXML_DATA_TYPES = 0;
 }
+
 
 sub new {
     my $class = shift;
@@ -595,17 +610,16 @@ XML::LibXSLT - Interface to the gnome libxslt library
   use XML::LibXSLT;
   use XML::LibXML;
   
-  my $parser = XML::LibXML->new();
   my $xslt = XML::LibXSLT->new();
   
-  my $source = $parser->parse_file('foo.xml');
-  my $style_doc = $parser->parse_file('bar.xsl');
+  my $source = XML::LibXML->load_xml(location => 'foo.xml');
+  my $style_doc = XML::LibXML->load_xml(location=>'bar.xsl', no_cdata=>1);
   
   my $stylesheet = $xslt->parse_stylesheet($style_doc);
   
   my $results = $stylesheet->transform($source);
   
-  print $stylesheet->output_string($results);
+  print $stylesheet->output_as_bytes($results);
 
 =head1 DESCRIPTION
 
@@ -681,13 +695,19 @@ The following methods are available on the new XML::LibXSLT object:
 
 =over
 
-=item parse_stylesheet($doc)
+=item parse_stylesheet($stylesheet_doc)
 
-C<$doc> here is an XML::LibXML::Document object (see L<XML::LibXML>)
+C<$stylesheet_doc> here is an XML::LibXML::Document object (see L<XML::LibXML>)
 representing an XSLT file. This method will return a 
 XML::LibXSLT::Stylesheet object, or undef on failure. If the XSLT is
 invalid, an exception will be thrown, so wrap the call to 
 parse_stylesheet in an eval{} block to trap this.
+
+IMPORTANT: C<$stylesheet_doc> should not contain CDATA sections,
+otherwise libxslt may misbehave. The best way to assure this is to
+load the stylesheet with no_cdata flag, e.g.
+
+  my $stylesheet_doc = XML::LibXML->load_xml(location=>"some.xsl", no_cdata=>1);
 
 =item parse_stylesheet_file($filename)
 
@@ -722,38 +742,41 @@ happen with one stylesheet without requiring a reparse.
 =item transform(doc, %params)
 
   my $results = $stylesheet->transform($doc, foo => "value);
+  print $stylesheet->output_as_bytes($results);
 
 Transforms the passed in XML::LibXML::Document object, and returns a
 new XML::LibXML::Document. Extra hash entries are used as parameters.
+See output_string
 
 =item transform_file(filename, %params)
 
   my $results = $stylesheet->transform_file($filename, bar => "value");
 
-=item output_string(result)
+=item output_as_bytes(result)
 
 Returns a scalar that is the XSLT rendering of the
 XML::LibXML::Document object using the desired output format
 (specified in the xsl:output tag in the stylesheet). Note that you can
 also call $result->toString, but that will *always* output the
 document in XML format which may not be what you asked for in the
-xsl:output tag.
-
-Important note: The string returned by this function appears to Perl
-as characters if the output encoding was specified as UTF-8 and as
-bytes if no output encoding was specified or if the output encoding
-was different from UTF-8. See also C<output_as_bytes(result)> and
-C<output_as_chars(result)>.
-
-=item output_as_bytes(result)
-
-Like C<output_string(result)>, but always return the output as a byte
-string encoded in the output encoding specified in the stylesheet.
+xsl:output tag. The scalar is a byte string encoded in the output
+encoding specified in the stylesheet.
 
 =item output_as_chars(result)
 
-Like C<output_string(result)>, but always return the output as (UTF-8
+Like C<output_as_bytes(result)>, but always return the output as (UTF-8
 encoded) string of characters.
+
+=item output_string(result)
+
+DEPRECATED: This method is something between
+C<output_as_bytes(result)> and C<output_as_bytes(result)>: The scalar
+returned by this function appears to Perl as characters (UTF8 flag is
+on) if the output encoding specified in the XSLT stylesheet was UTF-8
+and as bytes if no output encoding was specified or if the output
+encoding was other than UTF-8. Since the behavior of this function
+depends on the particular stylesheet, it is deprecated in favor of
+C<output_as_bytes(result)> and C<output_as_chars(result)>.
 
 =item output_fh(result, fh)
 
@@ -955,13 +978,18 @@ Returns 1 if the module was compiled with libexslt, 0 otherwised.
 
 =back
 
+=head1 LICENSE
+
+This is free software, you may use it and distribute it under the same terms as
+Perl itself.
+
+Copyright 2001-2009, AxKit.com Ltd.
+
 =head1 AUTHOR
 
 Matt Sergeant, matt@sergeant.org
 
 Security callbacks implementation contributed by Shane Corgatelli.
-
-Copyright 2001-2008, AxKit.com Ltd. All rights reserved.
 
 =head1 MAINTAINER
 
