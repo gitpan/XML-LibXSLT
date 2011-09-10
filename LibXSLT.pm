@@ -1,4 +1,4 @@
-# $Id: LibXSLT.pm 228 2009-10-07 12:25:23Z pajas $
+# $Id$
 #
 # This is free software, you may use it and distribute it under the same terms as
 # Perl itself.
@@ -25,7 +25,7 @@ use Carp;
 
 require Exporter;
 
-$VERSION = "1.70";
+$VERSION = "1.71";
 
 require DynaLoader;
 
