@@ -25,7 +25,7 @@ use Carp;
 
 require Exporter;
 
-$VERSION = "1.71";
+$VERSION = "1.72";
 
 require DynaLoader;
 
@@ -263,6 +263,8 @@ sub parse_stylesheet {
                XML_LIBXSLT_READ_CB => $self->{XML_LIBXSLT_READ_CB},
                XML_LIBXSLT_CLOSE_CB => $self->{XML_LIBXSLT_CLOSE_CB},
                XML_LIBXSLT_SECPREFS => $self->{XML_LIBXSLT_SECPREFS},
+			   XML_LIBXSLT_FUNCTIONS => {},
+			   XML_LIBXSLT_ELEMENTS => {},
              };
 
     return bless $rv, "XML::LibXSLT::StylesheetWrapper";
@@ -291,6 +293,8 @@ sub parse_stylesheet_file {
                XML_LIBXSLT_READ_CB => $self->{XML_LIBXSLT_READ_CB},
                XML_LIBXSLT_CLOSE_CB => $self->{XML_LIBXSLT_CLOSE_CB},
                XML_LIBXSLT_SECPREFS => $self->{XML_LIBXSLT_SECPREFS},
+			   XML_LIBXSLT_FUNCTIONS => {},
+			   XML_LIBXSLT_ELEMENTS => {},
              };
 
     return bless $rv, "XML::LibXSLT::StylesheetWrapper";
@@ -486,6 +490,20 @@ sub transform_file {
     return $doc;
 }
 
+sub register_function
+{
+	my $self = shift;
+
+	$self->{XML_LIBXSLT_FUNCTIONS}->{"{$_[0]}$_[1]"} = [@_[0,1,2]];
+}
+
+sub register_element
+{
+	my $self = shift;
+
+	$self->{XML_LIBXSLT_ELEMENTS}->{"{$_[0]}$_[1]"} = [@_[0,1,2]];
+}
+
 sub output_string { shift->{XML_LIBXSLT_STYLESHEET}->_output_string($_[0],0) }
 sub output_as_bytes { shift->{XML_LIBXSLT_STYLESHEET}->_output_string($_[0],1) }
 sub output_as_chars { shift->{XML_LIBXSLT_STYLESHEET}->_output_string($_[0],2) }
@@ -659,6 +677,7 @@ debug messages will be ignored.
 =item register_function
 
   XML::LibXSLT->register_function($uri, $name, $subref);
+  $stylesheet->register_function($uri, $name, $subref);
 
 Registers an XSLT extension function mapped to the given URI. For example:
 
@@ -686,6 +705,30 @@ C<$XML::LibXSLT::USE_LIBXML_DATA_TYPES> to a true value. Return values can
 be a nodelist or a plain value - the code will just do the right thing.
 But only a single return value is supported (a list is not converted to
 a nodelist).
+
+=item register_element
+
+	$stylesheet->register_element($uri, $name, $subref)
+
+Registers an XSLT extension element $name mapped to the given URI. For example:
+
+  $stylesheet->register_element("urn:foo", "hello", sub {
+	  my $name = $_[2]->getAttribute( "name" );
+	  return XML::LibXML::Text->new( "Hello, $name!" );
+  });
+
+Will register a C<hello> element in the C<urn:foo> namespace that returns a "Hello, X!" text node. You must define this namespace in your XSLT and include its prefix in the C<extension-element-prefixes> list:
+
+  <xsl:stylesheet version="1.0"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:foo="urn:foo"
+	extension-element-prefixes="foo">
+  <xsl:template match="/">
+    <foo:hello name="bob"/>
+  </xsl:template>
+  </xsl:stylesheet>
+
+The callback is passed the input document node as $_[1] and the stylesheet node as $_[2]. $_[0] is reserved for future use.
 
 =back
 

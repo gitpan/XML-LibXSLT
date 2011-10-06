@@ -1,8 +1,8 @@
-benchmark.pl
+benchmark/benchmark.pl
+benchmark/Driver/BaseClass.pm
+benchmark/Driver/LibXSLT.pm
+benchmark/Driver/Sablotron.pm
 Changes
-Driver/BaseClass.pm
-Driver/LibXSLT.pm
-Driver/Sablotron.pm
 example/1.xml
 example/1.xsl
 example/2.xml
@@ -38,5 +38,3 @@ t/14security.t
 t/15misc.t
 testcases/default.conf
 typemap
-META.yml                                 Module YAML meta-data (added by MakeMaker)
-META.json                                Module JSON meta-data (added by MakeMaker)
