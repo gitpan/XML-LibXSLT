@@ -7,8 +7,8 @@
 
 
 BEGIN {
-  if ($] < 5.006_001) {
-    warn "\nSorry, at least Perl 5.6.1 is required for this module!\n\n";
+  if ($] < 5.008_001) {
+    warn "\nSorry, at least Perl 5.8.1 is required for this module!\n\n";
     exit;
   }
 }
@@ -208,7 +208,13 @@ WriteMakefile(
     'VERSION_FROM' => 'LibXSLT.pm', # finds $VERSION
     'AUTHOR'    => 'Matt Sergeant',
     'ABSTRACT'  => 'Interface to Gnome libxslt library',
-    'PREREQ_PM' => { 'XML::LibXML' => "1.70", },
+    'PREREQ_PM' =>
+    { 
+        'Encode' => 0,
+        'XML::LibXML' => "1.70", 
+        'strict' => 0,
+        'warnings' => 0,
+    },
     'OBJECT'     => '$(O_FILES)',
     %config,
 );
@@ -439,3 +445,19 @@ SRC
     print "yes\n";
     return 1;
 }
+
+sub MY::postamble {
+  return <<'MAKE_FRAG';
+
+runtest: pure_all
+	perl -MFile::Spec -MTest::Run::CmdLine::Iface -e \
+        "local @INC = @INC;	unshift @INC, map { File::Spec->rel2abs(\$$_) } ('$(INST_LIB)', '$(INST_ARCHLIB)'); Test::Run::CmdLine::Iface->new({test_files => [glob(q{t/*.t})]})->run();"
+
+distruntest: distdir
+	cd $(DISTVNAME) && $(ABSPERLRUN) Makefile.PL
+	cd $(DISTVNAME) && $(MAKE) $(PASTHRU)
+	cd $(DISTVNAME) && $(MAKE) runtest $(PASTHRU)
+
+MAKE_FRAG
+}
+

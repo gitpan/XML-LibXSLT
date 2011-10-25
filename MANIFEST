@@ -38,3 +38,4 @@ t/14security.t
 t/15misc.t
 testcases/default.conf
 typemap
+META.yml                                 Module meta-data (added by MakeMaker)

@@ -1,9 +1,11 @@
-use Test;
-BEGIN { plan tests => 29 }
+use strict;
+use warnings;
+
+# Should be 28.
+use Test::More tests => 28;
 
 use XML::LibXSLT;
 use XML::LibXML;
-ok(1);
 
 my $parser = XML::LibXML->new();
 my $xslt = XML::LibXSLT->new();
@@ -13,9 +15,11 @@ my $source = $parser->parse_string(<<'EOF');
 <foo/>
 EOF
 
+# TEST:$n=0;
 my @style_docs;
 
 # XML
+# TEST:$n++;
 push @style_docs, "text/xml", <<'EOF';
 <?xml version="1.0"?>
 <xsl:stylesheet
@@ -33,6 +37,7 @@ push @style_docs, "text/xml", <<'EOF';
 EOF
 
 # HTML
+# TEST:$n++;
 push @style_docs, "text/html", <<'EOF';
 <?xml version="1.0"?>
 <xsl:stylesheet
@@ -50,6 +55,7 @@ push @style_docs, "text/html", <<'EOF';
 EOF
 
 # TEXT
+# TEST:$n++;
 push @style_docs, "text/plain", <<'EOF';
 <?xml version="1.0"?>
 <xsl:stylesheet
@@ -67,6 +73,7 @@ push @style_docs, "text/plain", <<'EOF';
 EOF
 
 # Default XML
+# TEST:$n++;
 push @style_docs, "text/xml", <<'EOF';
 <?xml version="1.0"?>
 <xsl:stylesheet
@@ -82,6 +89,7 @@ push @style_docs, "text/xml", <<'EOF';
 EOF
 
 # Default HTML (broken for now!)
+# TEST:$n++;
 push @style_docs, "text/html", <<'EOF';
 <?xml version="1.0"?>
 <xsl:stylesheet
@@ -105,6 +113,7 @@ push @style_docs, "text/html", <<'EOF';
 EOF
 
 # Text, other
+# TEST:$n++;
 push @style_docs, "text/rtf", <<'EOF';
 <?xml version="1.0"?>
 <xsl:stylesheet
@@ -122,6 +131,7 @@ push @style_docs, "text/rtf", <<'EOF';
 EOF
 
 # XML, other
+# TEST:$n++;
 push @style_docs, "text/vnd.wap.wml", <<'EOF';
 <?xml version="1.0"?>
 <xsl:stylesheet
@@ -138,17 +148,22 @@ push @style_docs, "text/vnd.wap.wml", <<'EOF';
 </xsl:stylesheet>
 EOF
 
+# TEST:$num_style_docs=$n;
 while (@style_docs) {
     my ($media_type, $style_str) = splice(@style_docs, 0, 2);
     
     my $style_doc = $parser->parse_string($style_str);
-    ok($style_doc);
+    # TEST*$num_style_docs
+    ok($style_doc, ' TODO : Add test name');
     
     my $stylesheet = $xslt->parse_stylesheet($style_doc);
-    ok($stylesheet);
+    # TEST*$num_style_docs
+    ok($stylesheet, ' TODO : Add test name');
     
     my $results = $stylesheet->transform($source);
-    ok($results);
+    # TEST*$num_style_docs
+    ok($results, ' TODO : Add test name');
     
-    ok($stylesheet->media_type, $media_type);
+    # TEST*$num_style_docs
+    is($stylesheet->media_type, $media_type, ' TODO : Add test name');
 }
