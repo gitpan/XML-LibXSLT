@@ -25,7 +25,7 @@ use Carp;
 
 require Exporter;
 
-$VERSION = "1.74";
+$VERSION = "1.75";
 
 require DynaLoader;
 
@@ -54,6 +54,7 @@ sub new {
 # ido - perl dispatcher
 sub perl_dispatcher {
     my $func = shift;
+	my $owner_doc = shift;
     my @params = @_;
     my @perlParams;
     

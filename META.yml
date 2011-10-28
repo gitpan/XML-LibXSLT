@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               XML-LibXSLT
-version:            1.74
+version:            1.75
 abstract:           Interface to Gnome libxslt library
 author:
     - Matt Sergeant
