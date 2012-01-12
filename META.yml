@@ -1,25 +1,25 @@
---- #YAML:1.0
-name:               XML-LibXSLT
-version:            1.75
-abstract:           Interface to Gnome libxslt library
+---
+abstract: 'Interface to Gnome libxslt library'
 author:
-    - Matt Sergeant
-license:            unknown
-distribution_type:  module
-configure_requires:
-    ExtUtils::MakeMaker:  0
+  - 'Matt Sergeant'
 build_requires:
-    ExtUtils::MakeMaker:  0
-requires:
-    Encode:       0
-    strict:       0
-    warnings:     0
-    XML::LibXML:  1.70
-no_index:
-    directory:
-        - t
-        - inc
-generated_by:       ExtUtils::MakeMaker version 6.57_05
+  ExtUtils::MakeMaker: 0
+configure_requires:
+  ExtUtils::MakeMaker: 0
+dynamic_config: 1
+generated_by: 'ExtUtils::MakeMaker version 6.62, CPAN::Meta::Converter version 2.113640'
+license: unknown
 meta-spec:
-    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
-    version:  1.4
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: XML-LibXSLT
+no_index:
+  directory:
+    - t
+    - inc
+requires:
+  Encode: 0
+  XML::LibXML: 1.70
+  strict: 0
+  warnings: 0
+version: 1.76
