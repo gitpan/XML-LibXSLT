@@ -1,5 +1,5 @@
 ---
-abstract: 'Interface to Gnome libxslt library'
+abstract: 'Interface to GNOME libxslt library'
 author:
   - 'Matt Sergeant'
 build_requires:
@@ -22,4 +22,4 @@ requires:
   XML::LibXML: 1.70
   strict: 0
   warnings: 0
-version: 1.76
+version: 1.77

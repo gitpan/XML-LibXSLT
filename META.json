@@ -1,5 +1,5 @@
 {
-   "abstract" : "Interface to Gnome libxslt library",
+   "abstract" : "Interface to GNOME libxslt library",
    "author" : [
       "Matt Sergeant"
    ],
@@ -40,5 +40,5 @@
       }
    },
    "release_status" : "stable",
-   "version" : "1.76"
+   "version" : "1.77"
 }

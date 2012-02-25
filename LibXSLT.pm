@@ -25,7 +25,7 @@ use Carp;
 
 require Exporter;
 
-$VERSION = "1.76";
+$VERSION = "1.77";
 
 require DynaLoader;
 
@@ -622,7 +622,7 @@ __END__
 
 =head1 NAME
 
-XML::LibXSLT - Interface to the gnome libxslt library
+XML::LibXSLT - Interface to the GNOME libxslt library
 
 =head1 SYNOPSIS
 
@@ -642,7 +642,7 @@ XML::LibXSLT - Interface to the gnome libxslt library
 
 =head1 DESCRIPTION
 
-This module is an interface to the gnome project's libxslt. This is an
+This module is an interface to the GNOME project's libxslt. This is an
 extremely good XSLT engine, highly compliant and also very fast. I have
 tests showing this to be more than twice as fast as Sablotron.
 
@@ -785,16 +785,20 @@ happen with one stylesheet without requiring a reparse.
 
 =item transform(doc, %params)
 
-  my $results = $stylesheet->transform($doc, foo => "value);
+  my $results = $stylesheet->transform($doc, foo => "'bar'");
   print $stylesheet->output_as_bytes($results);
 
 Transforms the passed in XML::LibXML::Document object, and returns a
 new XML::LibXML::Document. Extra hash entries are used as parameters.
-See output_string
+Be sure to keep in mind the caveat with regard to quotes explained in
+the section on L</"Parameters"> below.
 
 =item transform_file(filename, %params)
 
-  my $results = $stylesheet->transform_file($filename, bar => "value");
+  my $results = $stylesheet->transform_file($filename, bar => "'baz'");
+
+Note the string parameter caveat, detailed in the section on
+L</"Parameters"> below.
 
 =item output_as_bytes(result)
 
