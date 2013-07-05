@@ -1,5 +1,9 @@
 Revision history for Perl extension XML::LibXSLT.
 
+1.81            Fri  5 Jul 10:13:36 IDT 2013
+    - Fix a typo reported by dsteinbrunner:
+        - https://rt.cpan.org/Ticket/Display.html?id=86689
+
 1.80            Wed 23 Jan 07:53:57 IST 2013
     - Bump the minimum version of libxslt2 to 1.1.28.
         - due to failures such as http://www.cpantesters.org/cpan/report/6f5029ee-639a-11e2-8465-2a97270fb964
@@ -64,12 +68,12 @@ Revision history for Perl extension XML::LibXSLT.
 1.72            Thu Oct  6 13:37:13 IST 2011
     - Moved the benchmarking code under benchmark/ so it won't be indexed
     by CPAN (Tim Brody).
-    - Avoid leaking memory inside extension elements by cleaning up on 
+    - Avoid leaking memory inside extension elements by cleaning up on
     stylesheet DESTROY (Tim Brody).
-    - xsltInit() and xsltCleanupGlobals() to avoid leaking memory on 
+    - xsltInit() and xsltCleanupGlobals() to avoid leaking memory on
     init/shutdown (Tim Brody).
-    - Added support for stylesheet context functions via a 
-    $stylesheet->register_function() method with the same arguments as 
+    - Added support for stylesheet context functions via a
+    $stylesheet->register_function() method with the same arguments as
     XML::LibXSLT->register_function(). (Tim Brody)
     - Added support for register_element() on stylesheet objects. The callback
     may leak memory though - nothing frees the _private attributes of the
@@ -116,7 +120,7 @@ Revision history for Perl extension XML::LibXSLT.
      - check libxslt version
      - added XML::LibXML-like API to retrieve libxslt version
      - added output_as_bytes() and output_as_chars()
-     - added regression tests for output_as_* to 11utf8.t 
+     - added regression tests for output_as_* to 11utf8.t
      - output_as_string documentation fixed to match reality
      - make 06entities.t to pass with older libxml2/libxslt
      - POD uses items instead of headings
@@ -218,7 +222,7 @@ Revision history for Perl extension XML::LibXSLT.
 
 1.00
     - More segfault fixes
-    - Benchmark updates    
+    - Benchmark updates
 
 0.99_01
     - More segfault fixes
