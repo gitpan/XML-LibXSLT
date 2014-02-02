@@ -22,4 +22,4 @@ requires:
   XML::LibXML: 1.70
   strict: 0
   warnings: 0
-version: 1.85
+version: 1.86
