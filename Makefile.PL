@@ -207,9 +207,11 @@ if ($ldflags) {
 # Avoid possible shared library name conflict. On Win32 systems
 # the name of system DLL libxlst.dll clashes with module's LibXSLT.dll.
 # To handle this we are gonna rename module's DLL to LibXSLT.xs.dll.
-if ($::is_Win32) {
-  if ($] eq '5.010000') {
-    print STDERR <<5100BUG;
+if ($::is_Win32)
+{
+    if ($] eq '5.010000')
+    {
+        print STDERR <<'BUG';
 ******************************** !!!WARNING!!! ********************************
 According to the version string you are running a win32 perl 5.10.0 that is
 known to be suffering from dynaloader bug that prevents using non-default
@@ -221,11 +223,14 @@ make the proposed changes you will got during the tests many error popups with
 slightly confusing message about "xsltApplyOneTemplate" function.
 This bug is not present in perl 5.8.* and will be fixed in 5.10.1.
 *******************************************************************************
-5100BUG
-  }
-  else {
-    $config{DLEXT} = 'xs.dll' if ($::is_Win32);
-  }
+BUG
+    }
+    else
+    {
+        # Fix for RT #94516 :
+        # https://rt.cpan.org/Ticket/Display.html?id=94516
+        $config{DLEXT} = 'xs.'.$Config{dlext};
+    }
 }
 
 WriteMakefile(
