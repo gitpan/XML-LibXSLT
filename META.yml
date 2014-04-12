@@ -25,4 +25,4 @@ requires:
   warnings: '0'
 resources:
   repository: https://bitbucket.org/shlomif/perl-xml-libxslt
-version: '1.90'
+version: '1.91'
